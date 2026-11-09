@@ -21,7 +21,8 @@ jobs:
       - name: Checkout GuideNH sources
         uses: actions/checkout@v4
         with:
-          repository: ABKQPO/GuideNH
+          repository: GTNewHorizons/GuideNH
+          ref: master
           token: ${{ secrets.GUIDENH_CHECKOUT_TOKEN || github.token }}
           path: GuideNH
           persist-credentials: false
