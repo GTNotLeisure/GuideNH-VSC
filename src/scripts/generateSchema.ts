@@ -1052,6 +1052,18 @@ function applyReferenceEnhancements(tags: Record<string, GuideNhTagSchema>): voi
 		y: { type: 'number', valueStyle: 'expression' },
 		z: { type: 'number', valueStyle: 'expression' }
 	});
+	tags.NeiRecipeLink = {
+		name: 'NeiRecipeLink', kind: 'inline',
+		description: 'Generated from GuideNH NEI inline navigation. Opens NEI in game; browser previews are inactive.',
+		attributes: sortAttributes({
+			id: { type: 'item', valueStyle: 'string', description: 'Required for recipes and usage; forbidden in handler mode.' },
+			handlerId: { type: 'string', valueStyle: 'string', description: 'Exact overlay or handler ID, case-insensitive. Required in handler mode.' },
+			mode: { type: 'enum', values: ['handler', 'recipes', 'usage'], valueStyle: 'string', description: 'Defaults to recipes with id, otherwise handler.' },
+			title: { type: 'string', valueStyle: 'string' }
+		}),
+		children: [],
+		snippets: ['<NeiRecipeLink handlerId="${1:gt.recipe.cokeoven}">${2:Check NEI}</NeiRecipeLink>']
+	};
 	tags.ImageAnnotation = {
 		name: 'ImageAnnotation',
 		kind: 'block',
@@ -1747,6 +1759,14 @@ async function mergeInsertTemplateSnippets(sources: JavaSourceFile[]): Promise<v
 	const schemaPath = path.join(__dirname, '..', '..', 'src', 'schema', 'snippets.json');
 	const existing = JSON.parse(await fs.readFile(schemaPath, 'utf8')) as GuideNhSnippetsFile;
 	const snippets = { ...existing.snippets };
+	for (const source of sources) {
+		for (const match of source.text.matchAll(/MarkdownSnippet\s*\.\s*inline\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\d+)\s*\)/g)) {
+			const text = unescapeJava(match[3]);
+			if (!text.startsWith('&[')) { continue; }
+			const key = `guidenh.markdown.${match[2].toLowerCase().replace(/[^a-z0-9]+/g, '.')}`;
+			snippets[key] = { prefix: match[1], body: withFinalTabStop(text, Number(match[4])).split('\n'), description: match[2] };
+		}
+	}
 	for (const template of collectInsertTemplates(sources)) {
 		const key = `guidenh.${lowerFirst(template.tagName)}`;
 		const current = snippets[key];

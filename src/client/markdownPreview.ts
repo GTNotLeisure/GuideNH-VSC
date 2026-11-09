@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { parseNeiAction, readActionLink } from '../common/actionLinks';
 
 type MarkdownItToken = {
 	type: string;
@@ -19,8 +20,15 @@ type MarkdownItToken = {
 };
 
 type MarkdownIt = {
+	inline: { ruler: { before(ruleName: string, name: string, rule: (state: MarkdownItInlineState, silent: boolean) => boolean): void } };
 	core: { ruler: { after(ruleName: string, name: string, rule: (state: MarkdownItState) => boolean): void } };
 	renderer: { rules: Record<string, MarkdownItRenderRule | undefined> };
+};
+
+type MarkdownItInlineState = {
+	src: string;
+	pos: number;
+	push(type: string, tag: string, nesting: number): MarkdownItToken;
 };
 
 type MarkdownItState = {
@@ -63,11 +71,35 @@ export function extendMarkdownIt(markdownIt: MarkdownIt): MarkdownIt {
 }
 
 function installGuideNhPreviewRenderer(markdownIt: MarkdownIt): void {
+	installActionLinkRenderer(markdownIt);
 	installMarkdownTableSpanRenderer(markdownIt);
 	installFloatingImageRenderer(markdownIt);
 	installLegacyImageDestinationRenderer(markdownIt);
 	installFenceRenderer(markdownIt);
 	installAlertRenderer(markdownIt);
+}
+
+function installActionLinkRenderer(markdownIt: MarkdownIt): void {
+	markdownIt.inline.ruler.before('link', 'guidenh-action-link', (state, silent) => {
+		const action = readActionLink(state.src, state.pos);
+		if (!action) { return false; }
+		if (!silent) {
+			let content = escapeHtml(action.source);
+			try {
+				if (/^nei:/i.test(action.destination)) {
+					parseNeiAction(action.destination);
+					content = `<span class="guidenh-nei-link" data-guidenh-nei-link data-guidenh-action-label>${escapeHtml(action.label)}</span>`;
+				} else if (/^sound(?:-src)?:/i.test(action.destination)) {
+					content = `<span class="guidenh-action-link">${escapeHtml(action.label)}</span>`;
+				}
+			} catch (error) {
+				content = `<span class="guidenh-preview-error">${escapeHtml(error instanceof Error ? error.message : String(error))}</span>`;
+			}
+			state.push('html_inline', '', 0).content = content;
+		}
+		state.pos = action.end;
+		return true;
+	});
 }
 
 const TABLE_SPAN_MARKER = "\uE000GNHSPAN";

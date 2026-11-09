@@ -3296,6 +3296,41 @@
       ],
       "snippets": []
     },
+    "NeiRecipeLink": {
+      "name": "NeiRecipeLink",
+      "kind": "inline",
+      "description": "Generated from GuideNH NEI inline navigation. Opens NEI in game; browser previews are inactive.",
+      "attributes": {
+        "handlerId": {
+          "type": "string",
+          "valueStyle": "string",
+          "description": "Exact overlay or handler ID, case-insensitive. Required in handler mode."
+        },
+        "id": {
+          "type": "item",
+          "valueStyle": "string",
+          "description": "Required for recipes and usage; forbidden in handler mode."
+        },
+        "mode": {
+          "type": "enum",
+          "values": [
+            "handler",
+            "recipes",
+            "usage"
+          ],
+          "valueStyle": "string",
+          "description": "Defaults to recipes with id, otherwise handler."
+        },
+        "title": {
+          "type": "string",
+          "valueStyle": "string"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<NeiRecipeLink handlerId=\"${1:gt.recipe.cokeoven}\">${2:Check NEI}</NeiRecipeLink>"
+      ]
+    },
     "NodeContent": {
       "name": "NodeContent",
       "kind": "block",

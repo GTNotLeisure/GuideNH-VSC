@@ -10,6 +10,7 @@ import { localizeServer } from '../localization';
 import { createGuideNhDocumentModel } from '../parser/documentModel';
 import { GuideNhParsedTag } from '../parser/documentParser';
 import { findAttributeSchema, findTagSchema, hasAttributeValue, isChildTagAllowed, matchesTagName } from '../schema/schemaLookup';
+import { validateNeiAttributes } from '../../common/actionLinks';
 
 export const GuideNhUnclosedTagDiagnosticCode = 'guidenh.unclosedTag';
 export const GuideNhClosingTagMismatchDiagnosticCode = 'guidenh.closingTagMismatch';
@@ -107,6 +108,14 @@ export function createGuideNhDiagnostics(
 }
 
 function createTagSpecificDiagnostics(text: string, tag: GuideNhParsedTag): Diagnostic[] {
+	if (matchesTagName(tag.name, 'NeiRecipeLink')) {
+		const error = validateNeiAttributes(tag.attributes);
+		const closing = text.indexOf('</NeiRecipeLink>', tag.end);
+		const body = closing >= 0 ? text.slice(tag.end, closing) : '';
+		const visualContent = /<(?:ItemIcon|ItemImage|ItemId|BlockId|KeyBind|PlayerName|Amount|img)\b/i.test(body);
+		const empty = tag.selfClosing || (closing >= 0 && !body.replace(/<[^>]*>/g, '').trim() && !visualContent);
+		return error || empty ? [createDiagnostic(text, tag.start, tag.end, error || 'NeiRecipeLink requires visible inline content.')] : [];
+	}
 	if (!matchesTagName(tag.name, 'FloatingImage')) {
 		return [];
 	}

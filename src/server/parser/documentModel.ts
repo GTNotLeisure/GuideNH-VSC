@@ -231,6 +231,7 @@ function findMarkdownReferences(text: string, documentUri?: string): GuideNhText
 	const pattern = /!?\[[^\]\r\n]*\]\(\s*([^()\s]+)\s*\)/g;
 	let match: RegExpExecArray | null;
 	while ((match = pattern.exec(text)) !== null) {
+		if (match.index > 0 && text[match.index - 1] === '&') { continue; }
 		const rawTarget = match[1];
 		const target = unwrapLegacyMarkdownDestination(rawTarget);
 		const kind = target.replace(/#.*/, '').endsWith('.md')
@@ -279,6 +280,7 @@ function findFrontmatterPageReferences(text: string, documentUri?: string): Guid
 function findAttributeReferences(text: string, tags: GuideNhParsedTag[], documentUri?: string): GuideNhTextReference[] {
 	const references: GuideNhTextReference[] = [];
 	for (const tag of tags) {
+		if (tag.name.toLowerCase() === 'neirecipelink') { continue; }
 		if (tag.closing) {
 			continue;
 		}

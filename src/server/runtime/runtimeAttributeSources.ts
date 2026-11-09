@@ -8,6 +8,7 @@ export interface RuntimeAttributeSource {
 }
 
 const RuntimeAttributeSources: RuntimeAttributeSource[] = [
+	{ tagName: 'NeiRecipeLink', attributeName: 'id', capability: 'items' },
 	{ tagName: 'ItemLink', attributeName: 'id', capability: 'items' },
 	{ tagName: 'ItemLink', attributeName: 'ore', capability: 'ores' },
 	{ tagName: 'ItemImage', attributeName: 'id', capability: 'items' },

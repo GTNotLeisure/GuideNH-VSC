@@ -22,6 +22,28 @@
     mermaid: 'Mermaid', latex: 'LaTeX', questCard: 'Quest card', structure: 'Structure', importedStructure: 'Imported structure', importedPonder: 'Imported Ponder',
     alerts: { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' }
   };
+  const neiExplanation = isChinese ? '请在 GuideNH 中打开本指南以查看 NEI 配方。' : 'Open this guide in GuideNH to view NEI recipes.';
+  const makeNeiSpan = (content, title = '') => {
+    const span = document.createElement('span');
+    span.className = 'guidenh-nei-link';
+    span.title = [title, neiExplanation].filter(Boolean).join('\n');
+    if (typeof content === 'string') span.textContent = content;
+    else span.append(...content);
+    return span;
+  };
+  all('neirecipelink').forEach(element => {
+    const id = attr(element, 'id').trim(), handler = attr(element, 'handlerId').trim();
+    const mode = element.hasAttribute('mode') ? attr(element, 'mode').trim().toLowerCase() : (id ? 'recipes' : 'handler');
+    const error = !['handler', 'recipes', 'usage'].includes(mode) ? 'Unknown NEI action: ' + mode
+      : /[\u0000-\u001f\u007f-\u009f]/.test(attr(element, 'id') + attr(element, 'handlerId')) ? 'NEI targets must not contain control characters.'
+      : mode === 'handler' && (!handler || id) ? 'NEI handler mode requires handlerId and does not accept id.'
+      : mode !== 'handler' && !id ? 'NEI ' + mode + ' mode requires id.'
+      : !element.textContent.trim() && !element.querySelector('img,svg,itemicon,itemimage,itemid,blockid,keybind,playername,amount') ? 'NeiRecipeLink requires visible inline content.' : '';
+    const span = makeNeiSpan(error || Array.from(element.childNodes), attr(element, 'title'));
+    if (error) span.className = 'guidenh-preview-error';
+    element.replaceWith(span);
+  });
+  all('[data-guidenh-nei-link]').forEach(element => { element.title = neiExplanation; });
   const finite = values => values.filter(Number.isFinite);
   const range = (min, max, fallbackMin, fallbackMax) => {
     const left = number(min, fallbackMin), right = number(max, fallbackMax);
@@ -39,7 +61,7 @@
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const textNodes = []; while (walker.nextNode()) textNodes.push(walker.currentNode);
   textNodes.forEach(node => {
-    if (['CODE', 'PRE', 'SCRIPT', 'STYLE'].includes(node.parentElement && node.parentElement.tagName)) return;
+    if (node.parentElement?.closest('code,pre,script,style,[data-guidenh-action-label]')) return;
     let html = node.nodeValue, changed = false;
     markers.forEach(([marker, className]) => {
       const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
