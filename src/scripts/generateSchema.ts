@@ -410,6 +410,7 @@ function applySceneTagEnhancements(tags: Record<string, GuideNhTagSchema>, sourc
 	const sceneTagCompiler = findSourceByClassName(sources, 'SceneTagCompiler');
 	if (!sceneTagCompiler) {
 		applySceneDocumentationEnhancements(tags);
+		applyAnnotationColorEnhancements(tags);
 		applyStructureLibConditionEnhancements(tags);
 		syncSceneAlias(tags);
 		return;
@@ -417,6 +418,7 @@ function applySceneTagEnhancements(tags: Record<string, GuideNhTagSchema>, sourc
 	applySceneChildren(tags, sceneTagCompiler.text, sources);
 	applySceneBlockStatsTags(tags);
 	applySceneDocumentationEnhancements(tags);
+	applyAnnotationColorEnhancements(tags);
 	applyStructureLibConditionEnhancements(tags);
 	syncSceneAlias(tags);
 }
@@ -624,6 +626,15 @@ function applySceneDocumentationEnhancements(tags: Record<string, GuideNhTagSche
 	};
 	if (tags.LineAnnotation) {
 		tags.LineAnnotation.children = [];
+	}
+}
+
+function applyAnnotationColorEnhancements(tags: Record<string, GuideNhTagSchema>): void {
+	for (const tagName of ['BlockAnnotation', 'BoxAnnotation', 'OutlineAnnotation']) {
+		mergeAttributes(tags[tagName], {
+			colorMode: { type: 'enum', valueStyle: 'string', values: ['solid', 'rainbow'] },
+			colorPeriod: { type: 'number', valueStyle: 'expression', description: 'Positive finite cycle duration in seconds. Defaults to 2.4.' }
+		});
 	}
 }
 

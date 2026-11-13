@@ -296,6 +296,19 @@
           "type": "color",
           "valueStyle": "string"
         },
+        "colorMode": {
+          "type": "enum",
+          "valueStyle": "string",
+          "values": [
+            "solid",
+            "rainbow"
+          ]
+        },
+        "colorPeriod": {
+          "type": "number",
+          "valueStyle": "expression",
+          "description": "Positive finite cycle duration in seconds. Defaults to 2.4."
+        },
         "pos": {
           "type": "string",
           "valueStyle": "string"
@@ -536,6 +549,19 @@
         "color": {
           "type": "color",
           "valueStyle": "string"
+        },
+        "colorMode": {
+          "type": "enum",
+          "valueStyle": "string",
+          "values": [
+            "solid",
+            "rainbow"
+          ]
+        },
+        "colorPeriod": {
+          "type": "number",
+          "valueStyle": "expression",
+          "description": "Positive finite cycle duration in seconds. Defaults to 2.4."
         },
         "max": {
           "type": "string",
@@ -3407,6 +3433,19 @@
         },
         "color": {
           "type": "color"
+        },
+        "colorMode": {
+          "type": "enum",
+          "valueStyle": "string",
+          "values": [
+            "solid",
+            "rainbow"
+          ]
+        },
+        "colorPeriod": {
+          "type": "number",
+          "valueStyle": "expression",
+          "description": "Positive finite cycle duration in seconds. Defaults to 2.4."
         },
         "entity": {
           "type": "string"
