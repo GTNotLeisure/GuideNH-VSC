@@ -157,6 +157,27 @@
         "&[$0Check usages](nei:usage?id=gregtech:gt.blockmachines:236&handlerId=gt.recipe.cokeoven)"
       ],
       "description": "NEI usage link"
+    },
+    "guidenh.fluidImage": {
+      "prefix": "FluidImage",
+      "body": [
+        "<FluidImage id=\"$0water\" />"
+      ],
+      "description": "Insert a <FluidImage> tag."
+    },
+    "guidenh.fluidLink": {
+      "prefix": "FluidLink",
+      "body": [
+        "<FluidLink id=\"$0water\" showIcon=\"left\" />"
+      ],
+      "description": "Insert a <FluidLink> tag."
+    },
+    "guidenh.fluidIcon": {
+      "prefix": "FluidIcon",
+      "body": [
+        "<FluidIcon id=\"$0water\" />"
+      ],
+      "description": "Insert a <FluidIcon> tag."
     }
   }
 }

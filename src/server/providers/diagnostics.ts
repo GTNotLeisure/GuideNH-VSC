@@ -70,6 +70,7 @@ export function createGuideNhDiagnostics(
 			continue;
 		}
 		const parentTag = parentStack[parentStack.length - 1];
+		diagnostics.push(...createFluidDiagnostics(text, tag, parentTag));
 		if (parentTag && !isChildTagAllowed(schema, parentTag.name, tag.name)) {
 			diagnostics.push(createDiagnostic(text, tag.start, tag.end, localizeServer('diagnostic.tagNotAllowed', tag.name, parentTag.name)));
 		}
@@ -103,6 +104,37 @@ export function createGuideNhDiagnostics(
 			...createDiagnostic(text, tag.start, tag.end, localizeServer('diagnostic.unclosedTag', tag.name)),
 			code: GuideNhUnclosedTagDiagnosticCode
 		});
+	}
+	return diagnostics;
+}
+
+function createFluidDiagnostics(text: string, tag: GuideNhParsedTag, parent?: GuideNhParsedTag): Diagnostic[] {
+	const diagnostics: Diagnostic[] = [];
+	const fluidTag = ['FluidImage', 'FluidLink', 'FluidIcon'].some(name => matchesTagName(tag.name, name));
+	const recipe = ['Recipe', 'Usage', 'RecipeFor', 'RecipeUsage', 'RecipesFor', 'RecipesUsage'].some(name => matchesTagName(tag.name, name));
+	const input = matchesTagName(tag.name, 'InputAnnotation');
+	const has = (name: string): boolean => hasAttributeValue(tag.attributes, name);
+	const add = (message: string): void => { diagnostics.push(createDiagnostic(text, tag.start, tag.end, message)); };
+	if (matchesTagName(tag.name, 'FluidIcon') && !parent?.name?.match(/^ItemGrid$/i)) {
+		add(localizeServer('diagnostic.fluidIconParent'));
+	}
+	if ((recipe && has('id') && has('fluid')) || (input && has('item') && has('fluid'))) {
+		add(localizeServer('diagnostic.exclusiveAttributes', tag.name, recipe ? 'id' : 'item', 'fluid'));
+	}
+	if (input && !has('fluid')) {
+		for (const name of ['amount', 'nbt']) {
+			if (has(name)) { add(localizeServer('diagnostic.attributeRequires', tag.name, name, 'fluid')); }
+		}
+	}
+	if (fluidTag || input && has('fluid')) {
+		if (has('amount')) {
+			const amount = Number(tag.attributes.amount);
+			if (!Number.isNaN(amount) && (!Number.isInteger(amount) || amount < 0 || amount > 2147483647)) { add(localizeServer('diagnostic.fluidAmount')); }
+		}
+		if (has('scale')) {
+			const scale = Math.fround(Number(tag.attributes.scale));
+			if (!Number.isNaN(scale) && (!Number.isFinite(scale) || scale <= 0)) { add(localizeServer('diagnostic.fluidScale')); }
+		}
 	}
 	return diagnostics;
 }
@@ -258,7 +290,7 @@ function isAttributeMissing(
 	if (attribute.requiredWhenMissing && attribute.requiredWhenMissing.some((name) => hasAttributeValue(attributes, name))) {
 		return false;
 	}
-	return attribute.required === true;
+	return attribute.required === true || (attribute.requiredWhenMissing?.length ?? 0) > 0;
 }
 
 function popParentTag(parentStack: GuideNhParsedTag[], tagName: string): void {

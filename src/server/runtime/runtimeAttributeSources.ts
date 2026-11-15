@@ -8,6 +8,10 @@ export interface RuntimeAttributeSource {
 }
 
 const RuntimeAttributeSources: RuntimeAttributeSource[] = [
+	...['FluidImage', 'FluidLink', 'FluidIcon'].map(tagName => ({ tagName, attributeName: 'id', capability: 'fluids' })),
+	...['Recipe', 'Usage', 'RecipeFor', 'RecipeUsage', 'RecipesFor', 'RecipesUsage', 'InputAnnotation'].map(tagName => ({ tagName, attributeName: 'fluid', capability: 'fluids' })),
+	...['Series', 'LineSeries', 'Slice', 'ContentTabs'].map(tagName => ({ tagName, attributeName: 'iconFluid', capability: 'fluids' })),
+	{ tagName: 'ContentTabs', attributeName: 'icon_fluid', capability: 'fluids' },
 	{ tagName: 'NeiRecipeLink', attributeName: 'id', capability: 'items' },
 	{ tagName: 'ItemLink', attributeName: 'id', capability: 'items' },
 	{ tagName: 'ItemLink', attributeName: 'ore', capability: 'ores' },
@@ -38,6 +42,10 @@ const RuntimeAttributeSources: RuntimeAttributeSource[] = [
 ];
 
 const FrontmatterRuntimeCapabilities = new Map<string, string>([
+	['fluid_id', 'fluids'],
+	['fluid_ids', 'fluids'],
+	['navigation.icon_fluid', 'fluids'],
+	['navigation.icon_fluids', 'fluids'],
 	['item_id', 'items'],
 	['item_ids', 'items'],
 	['ore_ids', 'ores'],
@@ -53,6 +61,7 @@ const FrontmatterRuntimeCapabilities = new Map<string, string>([
 ]);
 
 const RuntimeAttributeTypeCapabilities = new Map<GuideNhAttributeSchema['type'], string>([
+	['fluid', 'fluids'],
 	['item', 'items'],
 	['ore', 'ores'],
 	['page', 'pages']

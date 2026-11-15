@@ -7,6 +7,7 @@ import { createFallbackInlineIconUri, createSizedInlineIconUri } from './itemSta
 import { renderMinecraftFormattingHtml, stripMinecraftFormatting } from './itemStackTextFormatting';
 import {
 	isGuideNhPreviewDocument,
+	contentPreviewPayload,
 	ItemStackContext
 } from './itemStackContextResolver';
 import { ItemStackPickerPanel } from './itemStackPickerPanel';
@@ -202,15 +203,7 @@ export class ItemStackDecorationController implements vscode.Disposable {
 		try {
 			const preview = context.value.trim().length === 0
 				? undefined
-				: await this.previewClient.resolve({
-					capability: 'items',
-					id: context.value.trim(),
-					count: 1,
-					renderVariant: 'inline',
-					filters: {
-						source: 'inline'
-					}
-				});
+				: await this.previewClient.resolve(contentPreviewPayload(context, 1, 'inline', 'inline'));
 			return {
 				context,
 				preview

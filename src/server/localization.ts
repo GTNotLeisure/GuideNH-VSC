@@ -14,6 +14,11 @@ type LocaleKey =
 	| 'diagnostic.unknownAttribute'
 	| 'diagnostic.attributeExpects'
 	| 'diagnostic.missingAttribute'
+	| 'diagnostic.exclusiveAttributes'
+	| 'diagnostic.attributeRequires'
+	| 'diagnostic.fluidIconParent'
+	| 'diagnostic.fluidAmount'
+	| 'diagnostic.fluidScale'
 	| 'diagnostic.unclosedTag'
 	| 'diagnostic.unknownPage'
 	| 'diagnostic.unknownAnchor'
@@ -44,6 +49,11 @@ const EnglishMessages: LocaleMessages = {
 	'diagnostic.unknownAttribute': 'Unknown attribute {0} on {1}',
 	'diagnostic.attributeExpects': 'Attribute {0} on {1} expects {2} value',
 	'diagnostic.missingAttribute': 'Missing required attribute {0} on {1}',
+	'diagnostic.exclusiveAttributes': '{0} cannot combine {1} and {2}',
+	'diagnostic.attributeRequires': 'Attribute {1} on {0} requires {2}',
+	'diagnostic.fluidIconParent': 'FluidIcon requires ItemGrid as its direct parent',
+	'diagnostic.fluidAmount': 'Fluid amount must be an integer',
+	'diagnostic.fluidScale': 'Fluid scale must be finite and positive',
 	'diagnostic.unclosedTag': 'Unclosed GuideNH tag {0}',
 	'diagnostic.unknownPage': 'Unknown GuideNH page {0}',
 	'diagnostic.unknownAnchor': 'Unknown anchor #{0} on GuideNH page {1}',
@@ -73,6 +83,11 @@ const ChineseMessages: LocaleMessages = {
 	'diagnostic.unknownAttribute': '{1} 上存在未知属性 {0}',
 	'diagnostic.attributeExpects': '{1} 上的属性 {0} 需要 {2} 类型的值',
 	'diagnostic.missingAttribute': '{1} 缺少必填属性 {0}',
+	'diagnostic.exclusiveAttributes': '{0} 不能同时使用 {1} 和 {2}',
+	'diagnostic.attributeRequires': '{0} 的属性 {1} 需要 {2}',
+	'diagnostic.fluidIconParent': 'FluidIcon 必须直接位于 ItemGrid 内',
+	'diagnostic.fluidAmount': '流体数量必须是整数',
+	'diagnostic.fluidScale': '流体缩放必须有限且大于零',
 	'diagnostic.unclosedTag': '未闭合的 GuideNH 标签 {0}',
 	'diagnostic.unknownPage': '未知 GuideNH 页面 {0}',
 	'diagnostic.unknownAnchor': 'GuideNH 页面 {1} 不存在标题锚点 #{0}',

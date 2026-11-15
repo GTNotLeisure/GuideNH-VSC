@@ -7,6 +7,7 @@ import {
 	findNearestItemStackContextInEditor,
 	isSameItemStackBinding,
 	ItemStackContext
+	, contentPreviewPayload
 } from './itemStackContextResolver';
 import { GuideNhItemStackDropMime } from './itemStackDropPayload';
 import { ItemStackPreviewClient } from './itemStackPreviewClient';
@@ -138,7 +139,7 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		const initialQuery = context.value.trim();
 		try {
 			const searchResult = await this.previewClient.search({
-				capability: 'items',
+				capability: context.capability ?? 'items',
 				cursor: '',
 				limit: 40,
 				prefix: initialQuery,
@@ -186,7 +187,7 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		}
 		try {
 			const searchResult = await this.previewClient.search({
-				capability: 'items',
+				capability: this.currentState.context.capability ?? 'items',
 				cursor: '',
 				limit: 40,
 				prefix: query,
@@ -367,15 +368,9 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 	}
 
 	private async resolvePreview(id: string): Promise<PreviewResolveResultPayload> {
-		const payload: PreviewResolvePayload = {
-			capability: 'items',
-			id,
-			count: 1,
-			renderVariant: 'picker',
-			filters: {
-				source: 'picker'
-			}
-		};
+		const context = this.currentState?.context;
+		const payload: PreviewResolvePayload = context ? contentPreviewPayload({ ...context, value: id }, 1, 'picker', 'picker')
+			: { capability: 'items', id, count: 1, renderVariant: 'picker', filters: { source: 'picker' } };
 		return this.previewClient.resolve(payload);
 	}
 
@@ -660,7 +655,7 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		}
 
 		function createDropPayload(id, source) {
-			return JSON.stringify({ id, source });
+			return JSON.stringify({ id, source, capability: currentState?.capability ?? 'items' });
 		}
 
 		function render(state) {
@@ -709,8 +704,8 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 				+ '<div class="tooltip">' + tooltip + '</div>'
 				+ '<div class="meta">'
 				+ '<div><strong>ID</strong><code>' + escapeHtml(selectedPreview.idPlain) + '</code></div>'
-				+ '<div><strong>Meta</strong><code>' + escapeHtml(String(selectedPreview.meta ?? 0)) + '</code></div>'
-				+ '<div><strong>Count</strong><code>' + escapeHtml(String(selectedPreview.count ?? 1)) + '</code></div>'
+				+ (selectedPreview.capability === 'fluids' ? '<div><strong>Amount</strong><code>' + escapeHtml(String(selectedPreview.amount ?? '')) + '</code></div>'
+				: '<div><strong>Meta</strong><code>' + escapeHtml(String(selectedPreview.meta ?? 0)) + '</code></div><div><strong>Count</strong><code>' + escapeHtml(String(selectedPreview.count ?? 1)) + '</code></div>')
 				+ nbtBlock
 				+ '</div>'
 				+ '<div class="apply">'
@@ -856,6 +851,7 @@ function serializeState(state: PickerState) {
 	return {
 		query: state.query,
 		selectedId: state.selectedId,
+		capability: state.context.capability ?? 'items',
 		isLoading: state.isLoading,
 		errorMessage: state.errorMessage ?? '',
 		entries: state.entries.map((entry) => ({

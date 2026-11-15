@@ -1101,6 +1101,14 @@
           "type": "number",
           "valueStyle": "string"
         },
+        "iconFluid": {
+          "type": "fluid",
+          "valueStyle": "string"
+        },
+        "icon_fluid": {
+          "type": "fluid",
+          "valueStyle": "string"
+        },
         "wrap": {
           "type": "string"
         },
@@ -1586,6 +1594,135 @@
         "SoundArea"
       ],
       "snippets": []
+    },
+    "FluidIcon": {
+      "name": "FluidIcon",
+      "kind": "any",
+      "description": "Native Forge fluid content using registry names.",
+      "attributes": {
+        "id": {
+          "type": "fluid",
+          "required": true,
+          "valueStyle": "string"
+        },
+        "amount": {
+          "type": "number",
+          "valueStyle": "expression"
+        },
+        "nbt": {
+          "type": "string",
+          "valueStyle": "string"
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "noTooltip": {
+          "type": "boolean"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<FluidIcon id=\"${1:water}\" />"
+      ]
+    },
+    "FluidImage": {
+      "name": "FluidImage",
+      "kind": "block",
+      "description": "Native Forge fluid content using registry names.",
+      "attributes": {
+        "id": {
+          "type": "fluid",
+          "required": true,
+          "valueStyle": "string"
+        },
+        "amount": {
+          "type": "number",
+          "valueStyle": "expression"
+        },
+        "nbt": {
+          "type": "string",
+          "valueStyle": "string"
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "noTooltip": {
+          "type": "boolean"
+        },
+        "scale": {
+          "type": "number"
+        },
+        "label": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "showIcon": {
+          "type": "boolean"
+        },
+        "yOffset": {
+          "type": "number"
+        },
+        "labelYOffset": {
+          "type": "number"
+        },
+        "wrap": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string"
+        },
+        "float": {
+          "type": "string"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<FluidImage id=\"${1:water}\" />"
+      ]
+    },
+    "FluidLink": {
+      "name": "FluidLink",
+      "kind": "inline",
+      "description": "Native Forge fluid content using registry names.",
+      "attributes": {
+        "id": {
+          "type": "fluid",
+          "required": true,
+          "valueStyle": "string"
+        },
+        "amount": {
+          "type": "number",
+          "valueStyle": "expression"
+        },
+        "nbt": {
+          "type": "string",
+          "valueStyle": "string"
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "noTooltip": {
+          "type": "boolean"
+        },
+        "scale": {
+          "type": "number"
+        },
+        "showIcon": {
+          "type": "string"
+        },
+        "showText": {
+          "type": "boolean"
+        },
+        "linksTo": {
+          "type": "page"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<FluidLink id=\"${1:water}\" showIcon=\"left\" />"
+      ]
     },
     "FootnoteList": {
       "name": "FootnoteList",
@@ -2575,6 +2712,14 @@
       "kind": "any",
       "description": "Generated from GuideNH InputAnnotation compiler source.",
       "attributes": {
+        "amount": {
+          "type": "number",
+          "valueStyle": "string"
+        },
+        "fluid": {
+          "type": "fluid",
+          "valueStyle": "string"
+        },
         "inputType": {
           "type": "enum",
           "values": [
@@ -2592,6 +2737,10 @@
             "sneak",
             "ctrl"
           ],
+          "valueStyle": "string"
+        },
+        "nbt": {
+          "type": "string",
           "valueStyle": "string"
         },
         "pos": {
@@ -2672,7 +2821,8 @@
         }
       },
       "children": [
-        "ItemIcon"
+        "ItemIcon",
+        "FluidIcon"
       ],
       "snippets": []
     },
@@ -3205,6 +3355,10 @@
         },
         "icon": {
           "type": "string",
+          "valueStyle": "string"
+        },
+        "iconFluid": {
+          "type": "fluid",
           "valueStyle": "string"
         },
         "iconImage": {
@@ -4140,6 +4294,12 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "fluid": {
+          "type": "fluid",
+          "requiredWhenMissing": [
+            "id"
+          ]
+        },
         "handlerBlacklist": {
           "type": "string",
           "valueStyle": "string",
@@ -4166,13 +4326,19 @@
         },
         "id": {
           "type": "item",
+          "required": false,
+          "requiredWhenMissing": [
+            "fluid"
+          ],
           "valueStyle": "string",
-          "required": true,
           "description": "Recipe output or recipe id."
         },
         "input": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "inputFluid": {
+          "type": "fluid"
         },
         "limit": {
           "type": "string",
@@ -4181,6 +4347,9 @@
         "output": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "outputFluid": {
+          "type": "fluid"
         },
         "recipeIndex": {
           "type": "string",
@@ -4213,6 +4382,12 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "fluid": {
+          "type": "fluid",
+          "requiredWhenMissing": [
+            "id"
+          ]
+        },
         "handlerBlacklist": {
           "type": "string",
           "valueStyle": "string",
@@ -4236,12 +4411,19 @@
           "description": "Handler ids to keep even when a blacklist names them. Comma separated."
         },
         "id": {
-          "type": "string",
+          "type": "item",
+          "required": false,
+          "requiredWhenMissing": [
+            "fluid"
+          ],
           "valueStyle": "string"
         },
         "input": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "inputFluid": {
+          "type": "fluid"
         },
         "limit": {
           "type": "string",
@@ -4250,6 +4432,9 @@
         "output": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "outputFluid": {
+          "type": "fluid"
         },
         "recipeIndex": {
           "type": "string",
@@ -4280,6 +4465,12 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "fluid": {
+          "type": "fluid",
+          "requiredWhenMissing": [
+            "id"
+          ]
+        },
         "handlerBlacklist": {
           "type": "string",
           "valueStyle": "string",
@@ -4303,12 +4494,19 @@
           "description": "Handler ids to keep even when a blacklist names them. Comma separated."
         },
         "id": {
-          "type": "string",
+          "type": "item",
+          "required": false,
+          "requiredWhenMissing": [
+            "fluid"
+          ],
           "valueStyle": "string"
         },
         "input": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "inputFluid": {
+          "type": "fluid"
         },
         "limit": {
           "type": "string",
@@ -4317,6 +4515,9 @@
         "output": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "outputFluid": {
+          "type": "fluid"
         },
         "recipeIndex": {
           "type": "string",
@@ -4347,6 +4548,12 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "fluid": {
+          "type": "fluid",
+          "requiredWhenMissing": [
+            "id"
+          ]
+        },
         "handlerBlacklist": {
           "type": "string",
           "valueStyle": "string",
@@ -4370,12 +4577,19 @@
           "description": "Handler ids to keep even when a blacklist names them. Comma separated."
         },
         "id": {
-          "type": "string",
+          "type": "item",
+          "required": false,
+          "requiredWhenMissing": [
+            "fluid"
+          ],
           "valueStyle": "string"
         },
         "input": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "inputFluid": {
+          "type": "fluid"
         },
         "limit": {
           "type": "string",
@@ -4384,6 +4598,9 @@
         "output": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "outputFluid": {
+          "type": "fluid"
         },
         "recipeIndex": {
           "type": "string",
@@ -4414,6 +4631,12 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "fluid": {
+          "type": "fluid",
+          "requiredWhenMissing": [
+            "id"
+          ]
+        },
         "handlerBlacklist": {
           "type": "string",
           "valueStyle": "string",
@@ -4437,12 +4660,19 @@
           "description": "Handler ids to keep even when a blacklist names them. Comma separated."
         },
         "id": {
-          "type": "string",
+          "type": "item",
+          "required": false,
+          "requiredWhenMissing": [
+            "fluid"
+          ],
           "valueStyle": "string"
         },
         "input": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "inputFluid": {
+          "type": "fluid"
         },
         "limit": {
           "type": "string",
@@ -4451,6 +4681,9 @@
         "output": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "outputFluid": {
+          "type": "fluid"
         },
         "recipeIndex": {
           "type": "string",
@@ -4998,6 +5231,10 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "iconFluid": {
+          "type": "fluid",
+          "valueStyle": "string"
+        },
         "iconImage": {
           "type": "string",
           "valueStyle": "string"
@@ -5031,6 +5268,10 @@
         },
         "icon": {
           "type": "string",
+          "valueStyle": "string"
+        },
+        "iconFluid": {
+          "type": "fluid",
           "valueStyle": "string"
         },
         "iconImage": {
@@ -6135,6 +6376,12 @@
           "type": "string",
           "valueStyle": "string"
         },
+        "fluid": {
+          "type": "fluid",
+          "requiredWhenMissing": [
+            "id"
+          ]
+        },
         "handlerBlacklist": {
           "type": "string",
           "valueStyle": "string",
@@ -6158,12 +6405,19 @@
           "description": "Handler ids to keep even when a blacklist names them. Comma separated."
         },
         "id": {
-          "type": "string",
+          "type": "item",
+          "required": false,
+          "requiredWhenMissing": [
+            "fluid"
+          ],
           "valueStyle": "string"
         },
         "input": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "inputFluid": {
+          "type": "fluid"
         },
         "limit": {
           "type": "string",
@@ -6172,6 +6426,9 @@
         "output": {
           "type": "string",
           "valueStyle": "string"
+        },
+        "outputFluid": {
+          "type": "fluid"
         },
         "recipeIndex": {
           "type": "string",

@@ -124,6 +124,7 @@ function createResolveCacheKey(payload: PreviewResolvePayload): string {
 		capability: payload.capability,
 		id: payload.id,
 		count: payload.count ?? 1,
+		amount: payload.amount ?? null,
 		nbt: payload.nbt ?? '',
 		renderVariant: payload.renderVariant ?? '',
 		filters: sortRecord(payload.filters ?? {})

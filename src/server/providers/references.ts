@@ -43,6 +43,9 @@ function findIndexedFrontmatterValueReferences(
 	if (context.path === 'item_id' || context.path === 'item_ids') {
 		return index.findReferencesToItem(context.value);
 	}
+	if (context.path === 'fluid_id' || context.path === 'fluid_ids') {
+		return index.findReferencesToFluid(context.value);
+	}
 	if (context.path === 'ore_ids') {
 		return index.findReferencesToOre(context.value);
 	}
@@ -67,6 +70,7 @@ function findRuntimeAttributeReferences(
 	if (source.capability === 'items') {
 		return index.findReferencesToItem(attributeValue);
 	}
+	if (source.capability === 'fluids') { return index.findReferencesToFluid(attributeValue); }
 	if (source.capability === 'ores') {
 		return index.findReferencesToOre(attributeValue);
 	}

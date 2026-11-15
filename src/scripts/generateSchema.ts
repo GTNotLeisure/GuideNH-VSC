@@ -65,7 +65,39 @@ export function enhanceGeneratedTagsFromJavaSources(
 	applyAmountEnhancements(enhanced);
 	applyTableEnhancements(enhanced);
 	applyReferenceEnhancements(enhanced);
+	applyFluidEnhancements(enhanced);
 	return enhanced;
+}
+
+function applyFluidEnhancements(tags: Record<string, GuideNhTagSchema>): void {
+	if (!tags.FluidImage && !tags.FluidLink) { return; }
+	const shared: Record<string, GuideNhAttributeSchema> = {
+		id: { type: 'fluid', required: true, valueStyle: 'string' },
+		amount: { type: 'number', valueStyle: 'expression' },
+		nbt: { type: 'string', valueStyle: 'string' },
+		showTooltip: { type: 'boolean' }, noTooltip: { type: 'boolean' }
+	};
+	for (const [name, attributes] of Object.entries({
+		FluidImage: { ...shared, scale: { type: 'number' }, label: { type: 'string' }, format: { type: 'string' },
+			showIcon: { type: 'boolean' }, yOffset: { type: 'number' }, labelYOffset: { type: 'number' },
+			wrap: { type: 'string' }, align: { type: 'string' }, float: { type: 'string' } },
+		FluidLink: { ...shared, scale: { type: 'number' }, showIcon: { type: 'string' }, showText: { type: 'boolean' }, linksTo: { type: 'page' } },
+		FluidIcon: shared
+	})) {
+		tags[name] = { name, kind: name === 'FluidLink' ? 'inline' : name === 'FluidIcon' ? 'any' : 'block',
+			description: 'Native Forge fluid content using registry names.',
+			attributes: attributes as Record<string, GuideNhAttributeSchema>, children: [],
+			snippets: [name === 'FluidLink' ? '<FluidLink id="${1:water}" showIcon="left" />' : `<${name} id="\${1:water}" />`] };
+	}
+	for (const name of ['Recipe', 'Usage', 'RecipeFor', 'RecipeUsage', 'RecipesFor', 'RecipesUsage']) {
+		const tag = tags[name];
+		if (!tag) { continue; }
+		tag.attributes.id = { ...tag.attributes.id, type: 'item', required: false, requiredWhenMissing: ['fluid'] };
+		tag.attributes.fluid = { type: 'fluid', requiredWhenMissing: ['id'] };
+		tag.attributes.inputFluid = { type: 'fluid' };
+		tag.attributes.outputFluid = { type: 'fluid' };
+	}
+	if (tags.ItemGrid) { tags.ItemGrid.children = ['ItemIcon', 'FluidIcon']; }
 }
 
 function extractCompilerTagNames(source: string): string[] {
@@ -1558,6 +1590,8 @@ function contributorAttributeSchema(kind: string, values: string[]): GuideNhAttr
 			return { type: 'color' };
 		case 'ENUM':
 			return { type: 'enum', ...enumerated };
+		case 'FLUID_ID':
+			return { type: 'fluid', valueStyle: 'string' };
 		case 'ITEM_ID':
 		case 'BLOCK_ID':
 			return { type: 'item' };
@@ -2005,6 +2039,7 @@ function applyGeneratedTagFixups(
 	delete mergedTags.Point?.attributes.name;
 	delete mergedTags.GameScene?.attributes.background;
 	delete mergedTags.Scene?.attributes.background;
+	applyFluidEnhancements(mergedTags);
 }
 
 function overwriteGeneratedTag(

@@ -15,7 +15,7 @@ export function extractIndexedFrontmatterValues(text: string): Record<string, st
 	const values: Record<string, string[]> = {};
 	let currentPath: string | undefined;
 	for (const line of frontmatter.text.split(/\r?\n/)) {
-		const scalarMatch = line.match(/^(\s*)(item_id|required_mod)\s*:\s*(.+?)\s*$/);
+		const scalarMatch = line.match(/^(\s*)(item_id|fluid_id|required_mod|icon_fluid)\s*:\s*(.+?)\s*$/);
 		const scalarPath = scalarMatch ? resolveIndexedFrontmatterScalarPath(scalarMatch[1].length, scalarMatch[2]) : undefined;
 		if (scalarMatch && scalarPath) {
 			const normalized = normalizeIndexedFrontmatterValue(scalarMatch[2], scalarMatch[3]);
@@ -55,7 +55,7 @@ export function findIndexedFrontmatterValueAtOffset(text: string, offset: number
 	let currentPath: string | undefined;
 	let lineStart = 0;
 	for (const line of frontmatter.text.split(/\r?\n/)) {
-		const scalarMatch = line.match(/^(\s*)(item_id|required_mod)\s*:\s*(.+?)\s*$/);
+		const scalarMatch = line.match(/^(\s*)(item_id|fluid_id|required_mod|icon_fluid)\s*:\s*(.+?)\s*$/);
 		const scalarPath = scalarMatch ? resolveIndexedFrontmatterScalarPath(scalarMatch[1].length, scalarMatch[2]) : undefined;
 		if (scalarMatch && scalarPath) {
 			const rawValue = scalarMatch[3];
@@ -105,11 +105,13 @@ const NestedNavigationListPaths = new Map<string, string>([
 	['required_mods', 'navigation.required_mods'],
 	['excluded_mods', 'navigation.excluded_mods'],
 	['icons', 'navigation.icons'],
+	['icon_fluids', 'navigation.icon_fluids'],
 	['icon_textures', 'navigation.icon_textures']
 ]);
 
 const NestedNavigationScalarPaths = new Map<string, string>([
 	['required_mod', 'navigation.required_mod'],
+	['icon_fluid', 'navigation.icon_fluid'],
 	['excluded_mod', 'navigation.excluded_mod']
 ]);
 
@@ -121,7 +123,7 @@ function resolveIndexedFrontmatterPath(indent: number, key: string): string {
 }
 
 function resolveIndexedFrontmatterScalarPath(indent: number, key: string): string | undefined {
-	if (indent === 0 && key === 'item_id') {
+	if (indent === 0 && (key === 'item_id' || key === 'fluid_id')) {
 		return key;
 	}
 	return indent > 0 ? NestedNavigationScalarPaths.get(key) : undefined;

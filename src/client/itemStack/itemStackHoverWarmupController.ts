@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ItemStackContextCache } from './itemStackContextCache';
 import { ItemStackPreviewClient } from './itemStackPreviewClient';
-import { isGuideNhPreviewDocument } from './itemStackContextResolver';
+import { isGuideNhPreviewDocument, contentPreviewPayload } from './itemStackContextResolver';
 
 export class ItemStackHoverWarmupController implements vscode.Disposable {
 	private static readonly hoverWarmupDelayMs = 1000;
@@ -71,20 +71,12 @@ export class ItemStackHoverWarmupController implements vscode.Disposable {
 			return;
 		}
 		const uri = editor.document.uri.toString();
-		const warmupKey = `${context.valueRange.start.line}:${context.valueRange.start.character}:${itemId}`;
+		const warmupKey = JSON.stringify([context.valueRange.start.line, context.valueRange.start.character, contentPreviewPayload(context, 1, 'inline', 'hover-warmup')]);
 		if (this.lastWarmupByUri.get(uri) === warmupKey) {
 			return;
 		}
 		try {
-			await this.previewClient.resolve({
-				capability: 'items',
-				id: itemId,
-				count: ItemStackHoverWarmupController.hoverWarmupCount,
-				renderVariant: 'inline',
-				filters: {
-					source: 'hover-warmup'
-				}
-			});
+			await this.previewClient.resolve(contentPreviewPayload(context, ItemStackHoverWarmupController.hoverWarmupCount, 'inline', 'hover-warmup'));
 			this.lastWarmupByUri.set(uri, warmupKey);
 		} catch {
 			return;

@@ -13,6 +13,8 @@ export interface GuideNhIndexedPage {
 	locale?: string;
 	itemIds: string[];
 	oreIds: string[];
+	fluidIds?: string[];
+	fluidLinks?: string[];
 	frontmatterValues: Record<string, string[]>;
 	links: string[];
 	resourceLinks: string[];
@@ -39,6 +41,8 @@ export class GuideNhWorkspaceIndex {
 	private readonly pageUrisByPrefixAlias = new Map<string, Set<string>>();
 	private readonly pageUrisByItemId = new Map<string, Set<string>>();
 	private readonly pageUrisByOreId = new Map<string, Set<string>>();
+	private readonly pageUrisByFluidId = new Map<string, Set<string>>();
+	private readonly sourceUrisByLinkedFluid = new Map<string, Set<string>>();
 	private readonly sourceUrisByLinkedPage = new Map<string, Set<string>>();
 	private readonly sourceUrisByLinkedResource = new Map<string, Set<string>>();
 	private readonly sourceUrisByLinkedItem = new Map<string, Set<string>>();
@@ -64,6 +68,8 @@ export class GuideNhWorkspaceIndex {
 			...(frontmatterValues.item_ids ?? [])
 		];
 		const oreIds = frontmatterValues.ore_ids ?? [];
+		const fluidIds = [...(frontmatterValues.fluid_id ?? []), ...(frontmatterValues.fluid_ids ?? [])].map(value => value.split('#')[0].trim());
+		const fluidLinks = extractSemanticLinks(model, 'fluids');
 		const links = extractPageLinks(model);
 		const resourceLinks = extractResourceLinks(model);
 		const itemLinks = extractSemanticLinks(model, 'items');
@@ -79,6 +85,8 @@ export class GuideNhWorkspaceIndex {
 			locale: location.locale,
 			itemIds,
 			oreIds,
+			fluidIds,
+			fluidLinks,
 			frontmatterValues,
 			links,
 			resourceLinks,
@@ -98,6 +106,8 @@ export class GuideNhWorkspaceIndex {
 		}
 		this.addItemReferences(itemIds, uri);
 		this.addOreReferences(oreIds, uri);
+		this.addSemanticValues(this.pageUrisByFluidId, fluidIds, uri);
+		this.addSemanticValues(this.sourceUrisByLinkedFluid, fluidLinks, uri);
 		this.sortedPagesDirty = true;
 		this.addFrontmatterValues(frontmatterValues);
 		for (const link of links) {
@@ -140,6 +150,8 @@ export class GuideNhWorkspaceIndex {
 		}
 		this.removeItemReferences(page.itemIds, uri);
 		this.removeOreReferences(page.oreIds, uri);
+		this.removeSemanticValues(this.pageUrisByFluidId, page.fluidIds ?? [], uri);
+		this.removeSemanticValues(this.sourceUrisByLinkedFluid, page.fluidLinks ?? [], uri);
 		this.sortedPagesDirty = true;
 		this.removeFrontmatterValues(page.frontmatterValues);
 		for (const link of page.links) {
@@ -205,6 +217,11 @@ export class GuideNhWorkspaceIndex {
 
 	findOreReference(oreId: string): GuideNhIndexedPage | undefined {
 		const uri = this.pageUrisByOreId.get(oreId)?.values().next().value;
+		return uri ? this.pages.get(uri) : undefined;
+	}
+
+	findFluidReference(fluidId: string): GuideNhIndexedPage | undefined {
+		const uri = this.pageUrisByFluidId.get(fluidId.split('#')[0].trim())?.values().next().value;
 		return uri ? this.pages.get(uri) : undefined;
 	}
 
@@ -332,6 +349,27 @@ export class GuideNhWorkspaceIndex {
 
 	findReferencesToOre(oreId: string): GuideNhIndexedPage[] {
 		return this.collectReferencedPages(oreId, this.pageUrisByOreId, this.sourceUrisByLinkedOre);
+	}
+
+	findReferencesToFluid(fluidId: string): GuideNhIndexedPage[] {
+		return this.collectReferencedPages(fluidId.split('#')[0].trim(), this.pageUrisByFluidId, this.sourceUrisByLinkedFluid);
+	}
+
+	private addSemanticValues(index: Map<string, Set<string>>, values: string[], uri: string): void {
+		for (const value of values) {
+			const uris = index.get(value) ?? new Set<string>();
+			uris.add(uri);
+			index.set(value, uris);
+		}
+	}
+
+	private removeSemanticValues(index: Map<string, Set<string>>, values: string[], uri: string): void {
+		for (const value of values) {
+			const uris = index.get(value);
+			if (!uris) { continue; }
+			uris.delete(uri);
+			if (!uris.size) { index.delete(value); }
+		}
 	}
 
 	private addPageReference(relativePath: string, sourceUri: string): void {
@@ -671,7 +709,7 @@ function extractResourceLinks(model: GuideNhDocumentModel): string[] {
 	));
 }
 
-function extractSemanticLinks(model: GuideNhDocumentModel, capability: 'items' | 'ores'): string[] {
+function extractSemanticLinks(model: GuideNhDocumentModel, capability: 'items' | 'ores' | 'fluids'): string[] {
 	return Array.from(new Set(
 		model.parsed.tags.flatMap((tag) => {
 			if (tag.closing) {

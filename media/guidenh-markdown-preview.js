@@ -108,6 +108,82 @@
     if (normalized !== source) image.setAttribute('src', normalized);
   });
 
+
+  const formatFluidLabel = (name, format) => {
+    if (format === null) return '<em>' + esc(name) + '</em>';
+    const markers = [['~~', 's'], ['**', 'strong'], ['__', 'u'], ['++', 'u'],
+      ['^^', 'span style="text-decoration:underline wavy"'], ['::', 'span style="text-decoration:underline dotted"'], ['*', 'em'], ['_', 'em']];
+    let template = format, open = '', close = '';
+    while (true) {
+      const marker = markers.find(([token]) => template.length > token.length * 2 && template.startsWith(token) && template.endsWith(token));
+      if (!marker) break;
+      const [token, tag] = marker;
+      open += '<' + tag + '>'; close = '</' + tag.split(' ')[0] + '>' + close;
+      template = template.slice(token.length, -token.length);
+    }
+    return open + esc(template.replace(/%s/g, () => name)) + close;
+  };
+
+  const fluidIcon = (id, size) => {
+    const image = document.createElement('span');
+    image.className = 'guidenh-fluid-icon';
+    image.style.width = size + 'px'; image.style.height = size + 'px';
+    image.textContent = '◇';
+    image.setAttribute('aria-label', id);
+    const preview = window.__GUIDENH_FLUID_PREVIEWS__?.[id];
+    if (preview?.iconPngBase64 && /^[A-Za-z0-9+/=]+$/.test(preview.iconPngBase64)) {
+      const bitmap = document.createElement('img'); bitmap.src = 'data:image/png;base64,' + preview.iconPngBase64;
+      bitmap.alt = preview.displayName || id; bitmap.width = size; bitmap.height = size;
+      image.replaceChildren(bitmap);
+    }
+    return image;
+  };
+  all('fluidimage,fluidlink,fluidicon').forEach(element => {
+    const name = element.tagName.toLowerCase(), id = attr(element, 'id').trim();
+    const amountRaw = attr(element, 'amount').replace(/^[{]|[}]$/g, '').trim();
+    const amount = amountRaw ? Number(amountRaw) : null;
+    const scaleRaw = attr(element, 'scale').replace(/^[{]|[}]$/g, '').trim();
+    const scale = scaleRaw ? Number(scaleRaw) : 1;
+    const error = !id ? 'Fluid id is required'
+      : name === 'fluidicon' && !element.closest('itemgrid') ? 'FluidIcon requires ItemGrid'
+      : element.hasAttribute('ore') ? 'Fluid tags do not accept ore selectors'
+      : element.hasAttribute('amount') && (!/^\d+$/.test(amountRaw) || !Number.isSafeInteger(amount) || amount > 2147483647) ? 'Fluid amount must be a nonnegative integer'
+      : !Number.isFinite(scale) || scale <= 0 ? 'Fluid scale must be finite and positive' : '';
+    if (error) {
+      const failure = document.createElement('span'); failure.className = 'guidenh-preview-error'; failure.textContent = error;
+      element.replaceWith(failure); return;
+    }
+    const root = document.createElement('span'); root.className = 'guidenh-fluid-chip ' + name;
+    const tooltip = element.hasAttribute('showTooltip') ? bool(attr(element, 'showTooltip')) : !bool(attr(element, 'noTooltip'), false);
+    const preview = window.__GUIDENH_FLUID_PREVIEWS__?.[id];
+    const label = document.createElement('span'); label.className = 'guidenh-fluid-name';
+    label.textContent = preview?.displayName || id;
+    const labelFormat = attr(element, 'format');
+    if (name !== 'fluidlink') label.innerHTML = formatFluidLabel(preview?.displayName || id, element.hasAttribute('format') ? labelFormat : null);
+    const iconSide = attr(element, 'showIcon').replace(/[{}]/g, '').trim().toLowerCase();
+    const hasIcon = name === 'fluidlink' ? ['left', 'right', 'true', '1', 'yes'].includes(iconSide) : bool(iconSide);
+    const icon = hasIcon ? fluidIcon(id, Math.min(1024, Math.max(1, Math.round(scale * 16)))) : null;
+    const labelSide = attr(element, 'label').replace(/[{}]/g, '').trim().toLowerCase();
+    if (name === 'fluidlink') {
+      const customLabel = element.textContent.trim() || element.children.length;
+      if (customLabel) label.replaceChildren(...element.childNodes);
+      if (icon && iconSide === 'left') root.append(icon);
+      if (customLabel || bool(attr(element, 'showText'))) root.append(label);
+      if (icon && iconSide !== 'left') root.append(icon);
+      const target = attr(element, 'linksTo').trim();
+      if (target && !/^[a-z][a-z\d+.-]*:/i.test(target) && !target.startsWith('//') && !/[\u0000-\u001f\u007f]/.test(target)) {
+        const link = document.createElement('a'); link.href = target; link.append(...root.childNodes); root.append(link);
+      }
+    } else {
+      if (labelSide === 'left') root.append(label);
+      if (icon) root.append(icon);
+      if (labelSide && !['left', 'false', '0', 'no'].includes(labelSide)) root.append(label);
+    }
+    if (amount !== null && icon) { const badge = document.createElement('small'); badge.textContent = String(amount); icon.append(badge); }
+    if (tooltip) root.title = [preview?.displayName || id, id, amount === null ? '' : amount + ' L', attr(element, 'nbt')].filter(Boolean).join('\n');
+    element.replaceWith(root);
+  });
+
   all('contenttabs').forEach(container => {
     const tabs = Array.from(container.querySelectorAll(':scope > tab'));
     if (!tabs.length) return;
@@ -124,10 +200,12 @@
     root.append(strip, body); container.replaceWith(root);
   });
 
-  all('itemlink,itemimage,blockimage').forEach(element => {
-    const id = attr(element, 'id') || attr(element, 'ore') || text.unknownItem;
+  all('itemlink,itemimage,blockimage,itemicon').forEach(element => {
+    const id = attr(element, 'fluid') || attr(element, 'id') || attr(element, 'ore') || text.unknownItem;
     const chip = document.createElement(element.tagName.toLowerCase() === 'itemlink' ? 'a' : 'span');
-    chip.className = 'guidenh-item-chip ' + element.tagName.toLowerCase(); chip.textContent = id; chip.title = id;
+    const kind = element.tagName.toLowerCase();
+    chip.className = 'guidenh-item-chip ' + kind; chip.textContent = kind === 'itemicon' ? '◇' : id; chip.title = id;
+    if (kind === 'itemicon') { chip.setAttribute('data-item-id', id); chip.setAttribute('aria-label', id); }
     if (chip.tagName === 'A') chip.href = '#'; element.replaceWith(chip);
   });
 

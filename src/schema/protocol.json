@@ -1,7 +1,21 @@
 {
   "schemaVersion": 1,
   "protocolVersion": 1,
-  "capabilities": ["items", "ores", "categories", "mods", "commands", "sounds", "keybinds", "recipes", "quests", "entities", "structurelib", "pages"],
+  "capabilities": [
+    "items",
+    "fluids",
+    "ores",
+    "categories",
+    "mods",
+    "commands",
+    "sounds",
+    "keybinds",
+    "recipes",
+    "quests",
+    "entities",
+    "structurelib",
+    "pages"
+  ],
   "limits": {
     "maxMessageBytes": 262144,
     "maxPageSize": 200,

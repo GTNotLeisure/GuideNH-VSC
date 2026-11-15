@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { PreviewResolvePayload } from '../../common/protocol';
 
 export interface ItemStackContext {
 	tagName: string;
@@ -7,9 +8,26 @@ export interface ItemStackContext {
 	valueRange: vscode.Range;
 	tagRange: vscode.Range;
 	line: number;
+	capability?: 'items' | 'fluids';
+	amount?: number;
+	nbt?: string;
 }
 
 const ItemStackAttributeTargets = new Map<string, ReadonlySet<string>>([
+	['fluidlink', new Set(['id'])],
+	['fluidimage', new Set(['id'])],
+	['fluidicon', new Set(['id'])],
+	['inputannotation', new Set(['item', 'fluid'])],
+	['contenttabs', new Set(['iconItem', 'icon_item', 'iconFluid', 'icon_fluid'].map(name => name.toLowerCase()))],
+	['series', new Set(['icon', 'iconfluid'])],
+	['lineseries', new Set(['icon', 'iconfluid'])],
+	['slice', new Set(['icon', 'iconfluid'])],
+	['recipe', new Set(['id', 'fluid'])],
+	['usage', new Set(['id', 'fluid'])],
+	['recipefor', new Set(['id', 'fluid'])],
+	['recipeusage', new Set(['id', 'fluid'])],
+	['recipesfor', new Set(['id', 'fluid'])],
+	['recipesusage', new Set(['id', 'fluid'])],
 	['itemlink', new Set(['id'])],
 	['itemimage', new Set(['id'])],
 	['blockimage', new Set(['id'])],
@@ -18,6 +36,14 @@ const ItemStackAttributeTargets = new Map<string, ReadonlySet<string>>([
 	['removeblocks', new Set(['id'])],
 	['replaceblock', new Set(['from', 'to'])]
 ]);
+
+export function contentPreviewPayload(context: ItemStackContext, count: number, renderVariant: string, source: string): PreviewResolvePayload {
+	const capability = context.capability ?? 'items';
+	return { capability, id: context.value.trim(),
+		count: capability === 'items' ? count : undefined,
+		amount: capability === 'fluids' ? context.amount : undefined, nbt: context.nbt,
+		renderVariant, filters: { source } };
+}
 
 const TagPattern = /<([A-Za-z][A-Za-z0-9]*)\b[^<>]*?>/g;
 const AttributePattern = /([A-Za-z_][\w.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
@@ -138,7 +164,10 @@ function scanDocumentRange(
 				value,
 				valueRange,
 				tagRange: new vscode.Range(tagStart, tagEnd),
-				line: valueRange.start.line
+				line: valueRange.start.line,
+				capability: tagName.toLowerCase().startsWith('fluid') || /fluid/i.test(attributeName) ? 'fluids' : 'items',
+				amount: readAmount(tagMarkup),
+				nbt: /\bnbt\s*=\s*"((?:\\.|[^"\\])*)"/.exec(tagMarkup)?.[1]?.replace(/\\(["\\])/g, '$1')
 			};
 			const contextKey = createContextKey(context);
 			if (seen.has(contextKey)) {
@@ -148,6 +177,13 @@ function scanDocumentRange(
 			contexts.push(context);
 		}
 	}
+}
+
+function readAmount(markup: string): number | undefined {
+	const raw = /\bamount\s*=\s*(?:\{\s*(\d+)\s*\}|"(\d+)"|'(\d+)')/.exec(markup);
+	if (!raw) { return undefined; }
+	const amount = Number(raw[1] ?? raw[2] ?? raw[3]);
+	return Number.isSafeInteger(amount) && amount <= 2147483647 ? amount : undefined;
 }
 
 function mergeRanges(ranges: readonly vscode.Range[]): vscode.Range[] {

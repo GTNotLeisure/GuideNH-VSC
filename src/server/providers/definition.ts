@@ -49,7 +49,9 @@ function resolveIndexedFrontmatterValueDefinition(
 	if (!context) {
 		return undefined;
 	}
-	const target = context.path === 'item_id' || context.path === 'item_ids'
+	const target = context.path === 'fluid_id' || context.path === 'fluid_ids'
+		? index.findFluidReference(context.value)
+		: context.path === 'item_id' || context.path === 'item_ids'
 		? index.findItemReference(context.value)
 		: context.path === 'ore_ids'
 			? index.findOreReference(context.value)
@@ -75,7 +77,9 @@ function resolveRuntimeAttributeDefinition(
 	if (!source) {
 		return undefined;
 	}
-	const target = source.capability === 'items'
+	const target = source.capability === 'fluids'
+		? index.findFluidReference(attributeValue)
+		: source.capability === 'items'
 		? index.findItemReference(attributeValue)
 		: source.capability === 'ores'
 			? index.findOreReference(attributeValue)

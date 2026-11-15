@@ -129,7 +129,7 @@ function preprocessMarkdownTableSpans(source: string): string {
 			lines.splice(index, 0, `| ${Array.from({ length: Math.max(1, columns) }, () => TABLE_HEADERLESS_MARKER).join(" | ")} |`);
 			index += 1;
 		}
-		if (!isMarkdownTableStart(lines, index)) continue;
+		if (!isMarkdownTableStart(lines, index)) {continue;}
 		let cursor = index;
 		while (cursor < lines.length && /^\s*\|?.*\|.*$/.test(lines[cursor]) && lines[cursor].trim()) {
 			while (hasTableContinuation(lines[cursor]) && cursor + 1 < lines.length
@@ -140,7 +140,7 @@ function preprocessMarkdownTableSpans(source: string): string {
 			lines[cursor] = rewriteTableSpanLine(lines[cursor]);
 			cursor += 1;
 		}
-		if (cursor < lines.length && /^\s*\{:\s*.*\}\s*$/.test(lines[cursor])) lines[cursor] = "";
+		if (cursor < lines.length && /^\s*\{:\s*.*\}\s*$/.test(lines[cursor])) {lines[cursor] = "";}
 		index = cursor - 1;
 	}
 	return lines.join("\n");
@@ -176,7 +176,7 @@ function mergeTableRows(first: string, second: string): string {
 
 function rewriteTableSpanLine(line: string): string {
 	const cells = splitRawTableCells(line);
-	if (!cells.some(cell => cell.run > 1)) return line;
+	if (!cells.some(cell => cell.run > 1)) {return line;}
 	const result = ["|"];
 	for (let index = 0; index < cells.length; index += 1) {
 		const cell = cells[index];
@@ -188,7 +188,7 @@ function rewriteTableSpanLine(line: string): string {
 
 function splitRawTableCells(line: string): Array<{ text: string; span: number; run: number }> {
 	let text = String(line || "").trim();
-	if (text.startsWith("|")) text = text.slice(1);
+	if (text.startsWith("|")) {text = text.slice(1);}
 	const cells: Array<{ text: string; span: number; run: number }> = [];
 	let value = "";
 	for (let index = 0; index < text.length;) {
@@ -197,15 +197,15 @@ function splitRawTableCells(line: string): Array<{ text: string; span: number; r
 		}
 		if (text[index] !== "|") { value += text[index++]; continue; }
 		let end = index + 1;
-		while (end < text.length && text[end] === "|") end += 1;
+		while (end < text.length && text[end] === "|") {end += 1;}
 		const run = end - index;
-		if (value.trim() || cells.length) cells.push({ text: value.replaceAll("\\|", "|").trim(), span: 1, run });
-		if (run > 1 && cells.length) cells[cells.length - 1].span = run;
-		if (cells.length >= 2048) return cells;
+		if (value.trim() || cells.length) {cells.push({ text: value.replaceAll("\\|", "|").trim(), span: 1, run });}
+		if (run > 1 && cells.length) {cells[cells.length - 1].span = run;}
+		if (cells.length >= 2048) {return cells;}
 		value = "";
 		index = end;
 	}
-	if (value.trim()) cells.push({ text: value.replaceAll("\\|", "|").trim(), span: 1, run: 1 });
+	if (value.trim()) {cells.push({ text: value.replaceAll("\\|", "|").trim(), span: 1, run: 1 });}
 	return cells;
 }
 
@@ -217,18 +217,18 @@ function isMarkdownTableStart(lines: string[], index: number): boolean {
 
 function applyMarkdownTableSpans(tokens: MarkdownItToken[]): void {
 	for (let tableStart = 0; tableStart < tokens.length; tableStart += 1) {
-		if (tokens[tableStart].type !== "table_open") continue;
+		if (tokens[tableStart].type !== "table_open") {continue;}
 		const tableEnd = findTokenEnd(tokens, tableStart, "table_open", "table_close");
-		if (tableEnd < 0) continue;
+		if (tableEnd < 0) {continue;}
 		const rows: Array<Array<{ open: MarkdownItToken; inline?: MarkdownItToken; close?: MarkdownItToken; column: number; span: number; row: number; rowSpan: number; tokenIndex: number }>> = [];
 		for (let index = tableStart + 1; index < tableEnd; index += 1) {
-			if (tokens[index].type !== "tr_open") continue;
+			if (tokens[index].type !== "tr_open") {continue;}
 			const rowEnd = findTokenEnd(tokens, index, "tr_open", "tr_close");
-			if (rowEnd < 0) continue;
+			if (rowEnd < 0) {continue;}
 			const cells = [] as Array<{ open: MarkdownItToken; inline?: MarkdownItToken; close?: MarkdownItToken; column: number; span: number; row: number; rowSpan: number; tokenIndex: number }>;
 			let column = 0;
 			for (let cellIndex = index + 1; cellIndex < rowEnd; cellIndex += 1) {
-				if (tokens[cellIndex].type !== "th_open" && tokens[cellIndex].type !== "td_open") continue;
+				if (tokens[cellIndex].type !== "th_open" && tokens[cellIndex].type !== "td_open") {continue;}
 				const open = tokens[cellIndex];
 				const inline = tokens[cellIndex + 1]?.type === "inline" ? tokens[cellIndex + 1] : undefined;
 				const close = inline && tokens[cellIndex + 2]?.type === (open.tag + "_close") ? tokens[cellIndex + 2] : undefined;
@@ -237,7 +237,7 @@ function applyMarkdownTableSpans(tokens: MarkdownItToken[]): void {
 				if (inline) {
 					inline.content = inline.content.replaceAll(TABLE_HEADERLESS_MARKER, "");
 					inline.content = inline.content.replace(new RegExp(`${TABLE_SPAN_MARKER}\\d+${TABLE_SPAN_END}`, "g"), "");
-					for (const child of inline.children || []) child.content = child.content.replace(new RegExp(`${TABLE_SPAN_MARKER}\\d+${TABLE_SPAN_END}`, "g"), "");
+					for (const child of inline.children || []) {child.content = child.content.replace(new RegExp(`${TABLE_SPAN_MARKER}\\d+${TABLE_SPAN_END}`, "g"), "");}
 				}
 				cells.push({ open, inline, close, column, span, row: rows.length, rowSpan: 1, tokenIndex: cellIndex });
 				column += span;
@@ -253,14 +253,14 @@ function applyMarkdownTableSpans(tokens: MarkdownItToken[]): void {
 			if (headerless && rows[rowIndex][0]?.open) {
 				const rowOpenIndex = rows[rowIndex][0].tokenIndex - 1;
 				const rowEndIndex = findTokenEnd(tokens, rowOpenIndex, "tr_open", "tr_close");
-				for (let tokenIndex = rowOpenIndex; tokenIndex <= rowEndIndex; tokenIndex += 1) tokens[tokenIndex].hidden = true;
+				for (let tokenIndex = rowOpenIndex; tokenIndex <= rowEndIndex; tokenIndex += 1) {tokens[tokenIndex].hidden = true;}
 			}
 			for (const cell of rows[rowIndex]) {
 				const text = cell.inline?.content.trim() || "";
-				if (!/^\^\^/.test(text)) continue;
+				if (!/^\^\^/.test(text)) {continue;}
 				const target = previousRowCells.find(candidate => candidate.column <= cell.column && cell.column < candidate.column + candidate.span);
-				if (!target) continue;
-				if (!target.open.attrs) target.open.attrs = [];
+				if (!target) {continue;}
+				if (!target.open.attrs) {target.open.attrs = [];}
 				target.open.attrJoin("rowspan", String((Number(target.open.attrGet?.("rowspan") || 1) || 1) + 1));
 				const continuationText = text.replace(/^\^\^\s*/, "");
 				if (target.inline && continuationText) {
@@ -270,18 +270,18 @@ function applyMarkdownTableSpans(tokens: MarkdownItToken[]): void {
 					} as MarkdownItToken, { type: "text", tag: "", nesting: 0, content: continuationText, info: "", children: undefined } as MarkdownItToken];
 				}
 				target.rowSpan += 1;
-				if (!rowCoverage.includes(target)) rowCoverage.push(target);
+				if (!rowCoverage.includes(target)) {rowCoverage.push(target);}
 				cell.open.hidden = true;
 				if (cell.inline) { cell.inline.hidden = true; cell.inline.content = ""; }
-				if (cell.close) cell.close.hidden = true;
+				if (cell.close) {cell.close.hidden = true;}
 			}
 			previousRowCells = [...rowCoverage, ...rows[rowIndex]];
 			activeCells = rowCoverage.filter(cell => rowIndex + 1 < cell.row + cell.rowSpan);
 		}
 		for (const row of rows) {
 			for (const cell of row) {
-				if (cell.span <= 1) continue;
-				if (!cell.open.attrs) cell.open.attrs = [];
+				if (cell.span <= 1) {continue;}
+				if (!cell.open.attrs) {cell.open.attrs = [];}
 				cell.open.attrJoin("colspan", String(cell.span));
 			}
 		}
@@ -292,8 +292,8 @@ function applyMarkdownTableSpans(tokens: MarkdownItToken[]): void {
 function findTokenEnd(tokens: MarkdownItToken[], start: number, openType: string, closeType: string): number {
 	let depth = 0;
 	for (let index = start; index < tokens.length; index += 1) {
-		if (tokens[index].type === openType) depth += 1;
-		if (tokens[index].type === closeType && --depth === 0) return index;
+		if (tokens[index].type === openType) {depth += 1;}
+		if (tokens[index].type === closeType && --depth === 0) {return index;}
 	}
 	return -1;
 }

@@ -101,6 +101,7 @@ export interface PreviewResolvePayload {
 	capability: string;
 	id: string;
 	count?: number;
+	amount?: number;
 	nbt?: string;
 	renderVariant?: string;
 	filters?: Record<string, string>;
@@ -114,6 +115,7 @@ export interface PreviewResolveResultPayload {
 	detail?: string;
 	meta?: number;
 	count?: number;
+	amount?: number;
 	nbt?: string;
 	tooltipLines: string[];
 	iconPngBase64: string;
@@ -231,6 +233,7 @@ export function createPreviewResolveMessage(
 			capability: payload.capability,
 			id: payload.id,
 			count: payload.count,
+			amount: payload.amount,
 			nbt: payload.nbt,
 			renderVariant: payload.renderVariant,
 			filters: payload.filters
