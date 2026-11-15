@@ -1153,6 +1153,19 @@ function createAxisAttributes(prefix: string, gridFlagAttr: string, gridColorAtt
 
 function createChartChildTagDefinitions(source: string): ChartChildTagDefinition[] {
 	const definitions: ChartChildTagDefinition[] = [];
+	if (source.includes('"ReferenceLine"')) {
+		definitions.push({
+			name: 'ReferenceLine',
+			description: 'A fixed value-axis reference: y for column, line and scatter charts; x for bar charts, with y accepted as an alias.',
+			attributes: {
+				color: { type: 'color', valueStyle: 'string' },
+				label: { type: 'string', valueStyle: 'string' },
+				x: { type: 'number', valueStyle: 'expression' },
+				y: { type: 'number', valueStyle: 'expression' }
+			},
+			children: []
+		});
+	}
 	if (source.includes('"Series"')) {
 		definitions.push({
 			name: 'Series',
@@ -1236,10 +1249,10 @@ function createChartChildTagDefinitions(source: string): ChartChildTagDefinition
 
 function applyChartParentChildren(tags: Record<string, GuideNhTagSchema>): void {
 	for (const name of ['ColumnChart', 'BarChart']) {
-		setChildren(tags[name], ['Series', 'LineSeries', 'PieInset']);
+		setChildren(tags[name], ['Series', 'LineSeries', 'PieInset', 'ReferenceLine']);
 	}
 	for (const name of ['LineChart', 'ScatterChart']) {
-		setChildren(tags[name], ['Series']);
+		setChildren(tags[name], ['Series', 'ReferenceLine']);
 	}
 	setChildren(tags.PieChart, ['Slice']);
 	setChildren(tags.FunctionGraph, ['Plot', 'Function', 'Point']);

@@ -223,6 +223,7 @@
       "children": [
         "LineSeries",
         "PieInset",
+        "ReferenceLine",
         "Series"
       ],
       "snippets": []
@@ -1022,6 +1023,7 @@
       "children": [
         "LineSeries",
         "PieInset",
+        "ReferenceLine",
         "Series"
       ],
       "snippets": []
@@ -3158,8 +3160,7 @@
         }
       },
       "children": [
-        "LineSeries",
-        "PieInset",
+        "ReferenceLine",
         "Series"
       ],
       "snippets": []
@@ -3735,7 +3736,6 @@
         }
       },
       "children": [
-        "PieInset",
         "Slice"
       ],
       "snippets": []
@@ -4464,6 +4464,29 @@
       "children": [],
       "snippets": []
     },
+    "ReferenceLine": {
+      "name": "ReferenceLine",
+      "kind": "chart",
+      "description": "A fixed value-axis reference: y for column, line and scatter charts; x for bar charts, with y accepted as an alias.",
+      "attributes": {
+        "color": {
+          "type": "color"
+        },
+        "label": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "valueStyle": "string"
+        },
+        "y": {
+          "type": "number",
+          "valueStyle": "string"
+        }
+      },
+      "children": [],
+      "snippets": []
+    },
     "RemoveBlocks": {
       "name": "RemoveBlocks",
       "kind": "any",
@@ -4778,8 +4801,7 @@
         }
       },
       "children": [
-        "LineSeries",
-        "PieInset",
+        "ReferenceLine",
         "Series"
       ],
       "snippets": []
