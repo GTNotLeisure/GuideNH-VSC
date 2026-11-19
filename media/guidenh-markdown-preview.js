@@ -75,7 +75,7 @@
     const label = restricted ? preview.displayName || preview.state : attr(element, 'text') || attr(element, 'title') || preview?.displayName || id;
     const root = document.createElement(tag.endsWith('card') ? 'blockquote' : 'span');
     root.className = 'guidenh-binding-' + (tag.endsWith('card') ? 'card' : tag.endsWith('icon') ? 'icon' : 'link');
-    const target = tag.startsWith('quest') ? 'native' : attr(element, 'target') || 'auto';
+    const target = tag.startsWith('quest') ? 'native' : attr(element, 'target') || (tag.endsWith('card') ? 'native' : 'auto');
     const scale = element.hasAttribute('scale') ? Number(attr(element, 'scale').replace(/[{}]/g, '')) : 1;
     if (!type || !id || /[\x00-\x1f\x7f]/.test(id) || !Number.isFinite(scale) || scale <= 0 || !['native','guide','auto'].includes(target)) {
       root.className = 'guidenh-preview-error'; root.textContent = 'Invalid binding attributes'; return root;
