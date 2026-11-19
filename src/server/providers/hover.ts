@@ -132,9 +132,7 @@ function createIndexedFrontmatterValueHover(
 		? 'GuideNH item id'
 		: context.path === 'ore_ids'
 			? 'GuideNH ore id'
-			: context.path === 'quest_ids'
-				? 'GuideNH quest id'
-				: undefined;
+			: undefined;
 	if (!kind) {
 		return undefined;
 	}

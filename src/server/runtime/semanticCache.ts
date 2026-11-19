@@ -23,7 +23,7 @@ export class SemanticCache {
 	private readonly capabilities = new Map<string, CapabilityCache>();
 
 	replace(capability: string, version: number, entries: SemanticEntry[]): void {
-		const indexedEntries = createIndexedEntries(entries);
+		const indexedEntries = createIndexedEntries(entries, capability.startsWith('bindings'));
 		this.capabilities.set(capability, {
 			version,
 			entries: indexedEntries,
@@ -69,18 +69,19 @@ export class SemanticCache {
 				break;
 			}
 			matches.push(cache.entries[index]);
-			seenKeys.add(cache.keys[index]);
+			seenKeys.add(capability.startsWith('bindings') ? cache.entries[index].id : cache.keys[index]);
 		}
 		if (matches.length >= limit) {
 			return matches;
 		}
 		for (let index = 0; index < cache.entries.length && matches.length < limit; index++) {
-			if (seenKeys.has(cache.keys[index])) {
+			const key = capability.startsWith('bindings') ? cache.entries[index].id : cache.keys[index];
+			if (seenKeys.has(key)) {
 				continue;
 			}
 			if (cache.labels[index].startsWith(lowered) || cache.details[index].startsWith(lowered)) {
 				matches.push(cache.entries[index]);
-				seenKeys.add(cache.keys[index]);
+				seenKeys.add(key);
 			}
 		}
 		return matches;
@@ -91,6 +92,9 @@ export class SemanticCache {
 		const cache = this.capabilities.get(capability);
 		if (!cache || normalizedQuery.length === 0) {
 			return undefined;
+		}
+		if (capability.startsWith('bindings')) {
+			return cache.entries.find(entry => entry.id === query);
 		}
 		for (let index = 0; index < cache.entries.length; index++) {
 			if (cache.keys[index] === normalizedQuery) {
@@ -230,16 +234,17 @@ function resolveItemMatchScore(
 	return undefined;
 }
 
-function createIndexedEntries(entries: SemanticEntry[]): SemanticEntry[] {
+function createIndexedEntries(entries: SemanticEntry[], caseSensitive = false): SemanticEntry[] {
 	const byKey = new Map<string, SemanticEntry>();
 	for (const entry of entries) {
-		const key = entry.id.toLowerCase();
+		const key = caseSensitive ? entry.id : entry.id.toLowerCase();
 		if (!byKey.has(key)) {
 			byKey.set(key, entry);
 		}
 	}
 	return Array.from(byKey.values()).sort((left, right) => {
-		return left.id.localeCompare(right.id, undefined, { sensitivity: 'base' });
+		const first = left.id.toLowerCase(), second = right.id.toLowerCase();
+		return first < second ? -1 : first > second ? 1 : 0;
 	});
 }
 

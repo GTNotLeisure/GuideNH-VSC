@@ -1,3 +1,8 @@
+.guidenh-binding-targets { display: inline-block; position: relative; cursor: pointer; }
+.guidenh-binding-target-list { display: none; position: absolute; z-index: 100; left: 0; top: 100%; min-width: 12em; max-width: 24em; padding: .35em; border: 1px solid var(--vscode-editorWidget-border, #777); background: var(--vscode-editor-background, #202020); box-shadow: 0 3px 12px #0005; }
+.guidenh-binding-target-list > a { display: block; padding: .25em .4em; white-space: normal; }
+.guidenh-binding-targets:hover > .guidenh-binding-target-list, .guidenh-binding-targets:focus-within > .guidenh-binding-target-list { display: block; }
+
 .guidenh-csv { border-collapse:collapse; margin:.6em 0; }.guidenh-csv th,.guidenh-csv td { border:1px solid var(--vscode-editorWidget-border,#888); padding:4px 8px; }.guidenh-filetree { padding:10px; border-left:3px solid #5f9ea0; background:rgba(95,158,160,.10); overflow:auto; }
 .guidenh-highlight { background:#fff39a; color:#222; }.guidenh-underline { text-decoration:underline; text-decoration-thickness:2px; }.guidenh-wavy { text-decoration:underline wavy #d17a00; }.guidenh-dotted { border-bottom:2px dotted currentColor; }
 .guidenh-tabs { border:1px solid var(--vscode-editorWidget-border,#888); margin:.75em 0; }.guidenh-tab-strip { display:flex; border-bottom:1px solid var(--vscode-editorWidget-border,#888); overflow-x:auto; }.guidenh-tab-strip button { border:0; background:transparent; color:inherit; padding:.5em .8em; cursor:pointer; white-space:nowrap; }.guidenh-tab-strip button.active { border-bottom:2px solid #5f9ea0; font-weight:600; }.guidenh-tab-panel { padding:.75em; }

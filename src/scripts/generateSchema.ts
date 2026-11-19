@@ -66,7 +66,31 @@ export function enhanceGeneratedTagsFromJavaSources(
 	applyTableEnhancements(enhanced);
 	applyReferenceEnhancements(enhanced);
 	applyFluidEnhancements(enhanced);
+	applyBindingEnhancements(enhanced);
 	return enhanced;
+}
+
+function applyBindingEnhancements(tags: Record<string, GuideNhTagSchema>): void {
+    for (const prefix of ['Binding', 'Research']) {
+        for (const suffix of ['Link', 'Card', 'Icon']) {
+            const name = prefix + suffix;
+            const attributes: Record<string, GuideNhAttributeSchema> = {
+                id: { type: 'binding', required: true }, showTooltip: { type: 'boolean' }
+            };
+            if (prefix === 'Binding') { attributes.type = { type: 'string', required: true }; }
+            if (suffix !== 'Icon') { attributes.target = { type: 'enum', values: ['auto', 'native', 'guide'] }; }
+            if (suffix === 'Link') { attributes.text = { type: 'string' }; }
+            if (suffix === 'Card') {
+                attributes.title = { type: 'string' };
+                for (const key of ['showDesc', 'showIcon', 'showParents']) { attributes[key] = { type: 'boolean' }; }
+            }
+            if (suffix === 'Icon') { attributes.scale = { type: 'number', valueStyle: 'expression' }; }
+            tags[name] = { name, kind: suffix === 'Link' ? 'inline' : suffix === 'Icon' ? 'any' : 'block',
+                description: 'Guide bindings identified by content type and original ID.', attributes, children: [],
+                snippets: [`<${name}${prefix === 'Binding' ? ' type="thaumcraft"' : ''} id="\${1:INFUSION}" />`] };
+        }
+    }
+    if (tags.QuestCard) { tags.QuestCard.attributes.title = { type: 'string' }; tags.QuestCard.attributes.showDesc = { type: 'boolean' }; }
 }
 
 function applyFluidEnhancements(tags: Record<string, GuideNhTagSchema>): void {
@@ -417,8 +441,6 @@ function applyContentTabsEnhancements(tags: Record<string, GuideNhTagSchema>): v
 			icon: { type: 'string', valueStyle: 'string' },
 			iconItem: { type: 'item', valueStyle: 'string' },
 			iconPng: { type: 'string', valueStyle: 'string' },
-			icon_item: { type: 'item', valueStyle: 'string' },
-			icon_png: { type: 'string', valueStyle: 'string' },
 			title: { type: 'string', valueStyle: 'string' },
 			width: { type: 'number', valueStyle: 'string' },
 			height: { type: 'number', valueStyle: 'string' }
@@ -1013,8 +1035,7 @@ function applyTableEnhancements(tags: Record<string, GuideNhTagSchema>): void {
 
 function applyReferenceEnhancements(tags: Record<string, GuideNhTagSchema>): void {
 	const tooltipCompatibilityAttributes: Record<string, GuideNhAttributeSchema> = {
-		showTooltip: { type: 'boolean', valueStyle: 'string' },
-		show_tooltip: { type: 'boolean', valueStyle: 'string' }
+		showTooltip: { type: 'boolean', valueStyle: 'string' }
 	};
 	mergeAttributes(tags.Block, {
 		ore: { type: 'ore', valueStyle: 'string' }
@@ -1590,6 +1611,8 @@ function contributorAttributeSchema(kind: string, values: string[]): GuideNhAttr
 			return { type: 'color' };
 		case 'ENUM':
 			return { type: 'enum', ...enumerated };
+		case 'BINDING_ID':
+			return { type: 'binding', valueStyle: 'string' };
 		case 'FLUID_ID':
 			return { type: 'fluid', valueStyle: 'string' };
 		case 'ITEM_ID':
@@ -2040,6 +2063,12 @@ function applyGeneratedTagFixups(
 	delete mergedTags.GameScene?.attributes.background;
 	delete mergedTags.Scene?.attributes.background;
 	applyFluidEnhancements(mergedTags);
+	applyBindingEnhancements(mergedTags);
+	for (const tag of Object.values(mergedTags)) {
+		for (const attribute of ['show_tooltip', 'show_desc', 'show_icon', 'show_parents', 'icon_item', 'icon_png', 'icon_fluid', 'from_nbt', 'to_nbt']) {
+			delete tag.attributes[attribute];
+		}
+	}
 }
 
 function overwriteGeneratedTag(

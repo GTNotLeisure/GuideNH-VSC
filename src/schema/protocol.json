@@ -14,7 +14,8 @@
     "quests",
     "entities",
     "structurelib",
-    "pages"
+    "pages",
+    "bindings"
   ],
   "limits": {
     "maxMessageBytes": 262144,

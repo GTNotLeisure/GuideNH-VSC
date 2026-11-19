@@ -91,10 +91,6 @@
       "type": "list",
       "description": "Ore dictionary names indexed to this page."
     },
-    "quest_ids": {
-      "type": "list",
-      "description": "BetterQuesting UUIDs or compact Base64 ids indexed to this page."
-    },
     "author": {
       "type": "string",
       "description": "Page author."
@@ -126,6 +122,32 @@
     "fluid_ids": {
       "type": "list",
       "description": "Forge fluid registry names, optionally followed by #anchors."
+    },
+    "research_id": {
+      "type": "string",
+      "description": "Original Thaumcraft research ID."
+    },
+    "research_ids": {
+      "type": "list",
+      "description": "Original Thaumcraft research IDs."
+    },
+    "bindings": {
+      "type": "list",
+      "description": "External content bindings. One flow mapping per line: {type: \"thaumcraft\", id: \"INFUSION\", anchor: \"infusion\"}.",
+      "children": {
+        "type": {
+          "type": "string",
+          "description": "Registered binding type."
+        },
+        "id": {
+          "type": "string",
+          "description": "Original content ID."
+        },
+        "anchor": {
+          "type": "string",
+          "description": "Anchor in this guide page."
+        }
+      }
     }
   }
 }

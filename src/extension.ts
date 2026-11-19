@@ -1,3 +1,4 @@
+import { registerBindingPreview, updateBindingPreviewStatus } from './client/bindingPreview';
 import * as vscode from 'vscode';
 import {
 	registerGuideNhCommands,
@@ -33,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<GuideN
 	registerGuideNhCommands(context, client, output);
 	registerGuideNhCompletionAssist(context);
 	registerGuideNhIndentation(context);
-	registerRuntimeBridgeStatusHandler(context, client);
+	registerRuntimeBridgeStatusHandler(context, client, updateBindingPreviewStatus);
 	const previewClient = new ItemStackPreviewClient(new RuntimePreviewClient(client));
 	const pickerPanel = new ItemStackPickerPanel(previewClient);
 	const itemStackContextCache = new ItemStackContextCache();
@@ -67,6 +68,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<GuideN
 		)
 	);
 	await client.start();
+    registerBindingPreview(context, new RuntimePreviewClient(client));
 	await tryAutoConnectRuntimeBridge(client, output);
 	return { extendMarkdownIt };
 }

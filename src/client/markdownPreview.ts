@@ -1,3 +1,4 @@
+import { bindingPreviewContext } from './bindingPreview';
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -67,6 +68,12 @@ const ALERT_COLORS: Record<string, string> = {
  */
 export function extendMarkdownIt(markdownIt: MarkdownIt): MarkdownIt {
 	installGuideNhPreviewRenderer(markdownIt);
+    markdownIt.core.ruler.after('inline', 'guidenh-binding-context', state => {
+        const context = bindingPreviewContext(state.src, state.env?.currentDocument?.toString());
+        state.tokens.unshift({ type: 'html_block', tag: '', nesting: 0, content: `<span hidden data-guidenh-binding-context="${context}"></span>`, info: '', attrJoin() {} });
+        return false;
+    });
+
 	return markdownIt;
 }
 

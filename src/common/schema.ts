@@ -1,5 +1,5 @@
 export interface GuideNhAttributeSchema {
-	type: 'string' | 'number' | 'boolean' | 'enum' | 'item' | 'fluid' | 'ore' | 'resource' | 'page' | 'color';
+	type: 'string' | 'number' | 'boolean' | 'enum' | 'item' | 'fluid' | 'binding' | 'ore' | 'resource' | 'page' | 'color';
 	required?: boolean;
 	requiredWhenMissing?: string[];
 	values?: string[];

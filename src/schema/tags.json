@@ -228,6 +228,107 @@
       ],
       "snippets": []
     },
+    "BindingCard": {
+      "name": "BindingCard",
+      "kind": "block",
+      "description": "Guide bindings identified by content type and original ID.",
+      "attributes": {
+        "id": {
+          "type": "binding",
+          "required": true
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "required": true
+        },
+        "target": {
+          "type": "enum",
+          "values": [
+            "auto",
+            "native",
+            "guide"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "showDesc": {
+          "type": "boolean"
+        },
+        "showIcon": {
+          "type": "boolean"
+        },
+        "showParents": {
+          "type": "boolean"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<BindingCard type=\"thaumcraft\" id=\"${1:INFUSION}\" />"
+      ]
+    },
+    "BindingIcon": {
+      "name": "BindingIcon",
+      "kind": "any",
+      "description": "Guide bindings identified by content type and original ID.",
+      "attributes": {
+        "id": {
+          "type": "binding",
+          "required": true
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "required": true
+        },
+        "scale": {
+          "type": "number",
+          "valueStyle": "expression"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<BindingIcon type=\"thaumcraft\" id=\"${1:INFUSION}\" />"
+      ]
+    },
+    "BindingLink": {
+      "name": "BindingLink",
+      "kind": "inline",
+      "description": "Guide bindings identified by content type and original ID.",
+      "attributes": {
+        "id": {
+          "type": "binding",
+          "required": true
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "required": true
+        },
+        "target": {
+          "type": "enum",
+          "values": [
+            "auto",
+            "native",
+            "guide"
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<BindingLink type=\"thaumcraft\" id=\"${1:INFUSION}\" />"
+      ]
+    },
     "Block": {
       "name": "Block",
       "kind": "scene",
@@ -1082,12 +1183,6 @@
         "icon": {
           "type": "string"
         },
-        "icon_item": {
-          "type": "item"
-        },
-        "icon_png": {
-          "type": "resource"
-        },
         "iconItem": {
           "type": "item"
         },
@@ -1102,10 +1197,6 @@
           "valueStyle": "string"
         },
         "iconFluid": {
-          "type": "fluid",
-          "valueStyle": "string"
-        },
-        "icon_fluid": {
           "type": "fluid",
           "valueStyle": "string"
         },
@@ -2885,10 +2976,6 @@
           "type": "number",
           "valueStyle": "expression"
         },
-        "show_tooltip": {
-          "type": "boolean",
-          "valueStyle": "string"
-        },
         "showIcon": {
           "type": "boolean",
           "valueStyle": "expression"
@@ -2936,11 +3023,6 @@
         "scale": {
           "type": "number",
           "valueStyle": "expression"
-        },
-        "show_tooltip": {
-          "type": "boolean",
-          "valueStyle": "string",
-          "description": "Whether hover tooltip is shown."
         },
         "showIcon": {
           "type": "string",
@@ -4235,17 +4317,15 @@
           "type": "string",
           "valueStyle": "string"
         },
-        "show_desc": {
-          "type": "string",
-          "valueStyle": "string"
-        },
-        "show_tooltip": {
-          "type": "boolean",
-          "valueStyle": "string"
+        "showDesc": {
+          "type": "boolean"
         },
         "showTooltip": {
           "type": "boolean",
           "valueStyle": "string"
+        },
+        "title": {
+          "type": "string"
         }
       },
       "children": [],
@@ -4258,10 +4338,6 @@
       "attributes": {
         "id": {
           "type": "string",
-          "valueStyle": "string"
-        },
-        "show_tooltip": {
-          "type": "boolean",
           "valueStyle": "string"
         },
         "showTooltip": {
@@ -4819,7 +4895,7 @@
           "type": "string",
           "valueStyle": "string"
         },
-        "from_nbt": {
+        "fromNbt": {
           "type": "string",
           "valueStyle": "string"
         },
@@ -4827,7 +4903,7 @@
           "type": "string",
           "valueStyle": "string"
         },
-        "to_nbt": {
+        "toNbt": {
           "type": "string",
           "valueStyle": "string"
         },
@@ -4846,6 +4922,95 @@
       },
       "children": [],
       "snippets": []
+    },
+    "ResearchCard": {
+      "name": "ResearchCard",
+      "kind": "block",
+      "description": "Guide bindings identified by content type and original ID.",
+      "attributes": {
+        "id": {
+          "type": "binding",
+          "required": true
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "target": {
+          "type": "enum",
+          "values": [
+            "auto",
+            "native",
+            "guide"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "showDesc": {
+          "type": "boolean"
+        },
+        "showIcon": {
+          "type": "boolean"
+        },
+        "showParents": {
+          "type": "boolean"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<ResearchCard id=\"${1:INFUSION}\" />"
+      ]
+    },
+    "ResearchIcon": {
+      "name": "ResearchIcon",
+      "kind": "any",
+      "description": "Guide bindings identified by content type and original ID.",
+      "attributes": {
+        "id": {
+          "type": "binding",
+          "required": true
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "scale": {
+          "type": "number",
+          "valueStyle": "expression"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<ResearchIcon id=\"${1:INFUSION}\" />"
+      ]
+    },
+    "ResearchLink": {
+      "name": "ResearchLink",
+      "kind": "inline",
+      "description": "Guide bindings identified by content type and original ID.",
+      "attributes": {
+        "id": {
+          "type": "binding",
+          "required": true
+        },
+        "showTooltip": {
+          "type": "boolean"
+        },
+        "target": {
+          "type": "enum",
+          "values": [
+            "auto",
+            "native",
+            "guide"
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "children": [],
+      "snippets": [
+        "<ResearchLink id=\"${1:INFUSION}\" />"
+      ]
     },
     "Rotation": {
       "name": "Rotation",

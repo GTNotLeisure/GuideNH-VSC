@@ -24,7 +24,8 @@ export function createRuntimeBridgeStatusHandler(
 	};
 }
 
-export function registerRuntimeBridgeStatusHandler(context: vscode.ExtensionContext, sender: RuntimeBridgeNotificationSender): void {
+export function registerRuntimeBridgeStatusHandler(context: vscode.ExtensionContext, sender: RuntimeBridgeNotificationSender,
+	onStatus?: (status: RuntimeBridgeStatusParams) => void): void {
 	const output = vscode.window.createOutputChannel('GuideNH Runtime');
 	context.subscriptions.push(output);
 	const handler = createRuntimeBridgeStatusHandler({
@@ -33,6 +34,7 @@ export function registerRuntimeBridgeStatusHandler(context: vscode.ExtensionCont
 		appendLine: (message) => output.appendLine(message)
 	});
 	context.subscriptions.push(sender.onNotification(RuntimeBridgeStatusNotification, (payload) => {
+		onStatus?.(payload as RuntimeBridgeStatusParams);
 		void handler(payload as RuntimeBridgeStatusParams);
 	}));
 }

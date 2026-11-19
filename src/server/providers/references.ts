@@ -1,3 +1,4 @@
+import { bindingAtOffset, bindingIdentity, bindingLocation } from '../parser/bindingIndexing';
 import { Location, Position, Range } from 'vscode-languageserver/node';
 import { GuideNhWorkspaceIndex } from '../index/workspaceIndex';
 import { createGuideNhDocumentModel, findReferenceAtOffset, findTagContextAtOffset } from '../parser/documentModel';
@@ -16,6 +17,12 @@ export function createGuideNhReferences(
 	if (frontmatterValueReferences.length > 0) {
 		return frontmatterValueReferences.map((page) => Location.create(page.uri, Range.create(Position.create(0, 0), Position.create(0, 0))));
 	}
+    const binding = bindingAtOffset(text, offset);
+    if (binding) {
+        return index.findBindingReferences(binding.type, binding.id).flatMap(page => (page.bindings || [])
+            .filter(entry => bindingIdentity(entry.type, entry.id) === bindingIdentity(binding.type, binding.id))
+            .map(entry => bindingLocation(page.uri, page.sourceText || "", entry)));
+    }
 	const model = createGuideNhDocumentModel(text, documentUri);
 	const fallbackPageId = documentUri ? resolveGuideNhPageId(documentUri) : fallbackTarget;
 	const reference = findReferenceAtOffset(model, offset);

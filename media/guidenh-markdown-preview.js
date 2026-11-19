@@ -44,6 +44,80 @@
     element.replaceWith(span);
   });
   all('[data-guidenh-nei-link]').forEach(element => { element.title = neiExplanation; });
+
+  const bindingKey = (type, rawId) => {
+    let id = String(rawId || '').trim();
+    if (type === 'betterquesting') {
+      if (/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) id = id.toLowerCase();
+      else try {
+        const bytes = atob(id.replaceAll("-", "+").replaceAll("_", "/"));
+        if (bytes.length === 16) {
+          const hex = Array.from(bytes, value => value.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+          id = [hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+        }
+      } catch (_) {}
+    }
+    return JSON.stringify([type, id]);
+  };
+  let bindingContext = { targets: window.__GUIDENH_BINDING_TARGETS__ || {}, previews: window.__GUIDENH_BINDING_PREVIEWS__ || {} };
+  const contextElement = document.querySelector('[data-guidenh-binding-context]');
+  if (contextElement) try {
+    bindingContext = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(contextElement.dataset.guidenhBindingContext), c => c.charCodeAt(0))));
+  } catch (_) {}
+  const nativeBindingExplanation = isChinese ? '原生界面可在游戏内打开' : 'Open the native screen in game';
+  const renderBindingElement = element => {
+    const tag = element.tagName.toLowerCase();
+    const type = tag.startsWith('research') ? 'thaumcraft' : tag.startsWith('quest') ? 'betterquesting' : attr(element, 'type').trim().toLowerCase();
+    const id = attr(element, 'id').trim();
+    const key = bindingKey(type, id);
+    const preview = bindingContext.previews[key];
+    const restricted = ['hidden', 'missing', 'unavailable'].includes(preview?.state);
+    const label = restricted ? preview.displayName || preview.state : attr(element, 'text') || attr(element, 'title') || preview?.displayName || id;
+    const root = document.createElement(tag.endsWith('card') ? 'blockquote' : 'span');
+    root.className = 'guidenh-binding-' + (tag.endsWith('card') ? 'card' : tag.endsWith('icon') ? 'icon' : 'link');
+    const target = tag.startsWith('quest') ? 'native' : attr(element, 'target') || 'auto';
+    const scale = element.hasAttribute('scale') ? Number(attr(element, 'scale').replace(/[{}]/g, '')) : 1;
+    if (!type || !id || /[\x00-\x1f\x7f]/.test(id) || !Number.isFinite(scale) || scale <= 0 || !['native','guide','auto'].includes(target)) {
+      root.className = 'guidenh-preview-error'; root.textContent = 'Invalid binding attributes'; return root;
+    }
+    const tooltip = !element.hasAttribute('showTooltip') || bool(attr(element, 'showTooltip'));
+    if (tooltip) root.title = (preview?.tooltipLines || []).join('\n');
+    const makeLink = (destination, text) => {
+      const link = document.createElement('a'); link.href = destination.path + (destination.anchor ? '#' + encodeURIComponent(destination.anchor) : ''); link.textContent = text; return link;
+    };
+    const targets = restricted ? [] : bindingContext.targets[key] || [];
+    const link = document.createElement('span');
+    if (targets.length === 1) link.append(makeLink(targets[0], label));
+    else if (targets.length > 1) {
+      link.className = 'guidenh-binding-targets'; link.tabIndex = 0;
+      const labelElement = document.createElement('span'), list = document.createElement('span');
+      labelElement.textContent = label; list.className = 'guidenh-binding-target-list';
+      targets.forEach(destination => list.append(makeLink(destination, destination.title || label)));
+      link.append(labelElement, list);
+    } else { link.textContent = label; if (!restricted) link.title = nativeBindingExplanation; }
+    const icon = () => {
+      if (restricted || !preview?.iconPngBase64 || !/^[A-Za-z0-9+/=]+$/.test(preview.iconPngBase64)) return null;
+      const image = document.createElement('img'); image.src = 'data:image/png;base64,' + preview.iconPngBase64; image.alt = label; image.width = Math.max(1, Math.round(16 * scale)); image.height = image.width; return image;
+    };
+    if (tag.endsWith('icon')) root.append(icon() || link);
+    else if (tag.endsWith('card')) {
+      const title = document.createElement('div');
+      const image = bool(attr(element, 'showIcon')) ? icon() : null;
+      if (image) title.append(image, document.createTextNode(' '));
+      title.append(link); root.append(title);
+      if (!restricted && bool(attr(element, 'showDesc')) && preview?.detail) { const description = document.createElement('p'); description.textContent = preview.detail; root.append(description); }
+      if (!restricted && bool(attr(element, 'showParents'), false)) for (const parent of preview?.prerequisites || []) {
+        const parentElement = document.createElement('bindinglink'); parentElement.setAttribute('type', parent.type); parentElement.setAttribute('id', parent.id);
+        root.append(renderBindingElement(parentElement), document.createTextNode(' '));
+      }
+    } else root.append(link);
+    return root;
+  };
+  // HTML nests following content inside self-closing custom tags. Preserve it while replacing the tag.
+  all('bindinglink,bindingcard,bindingicon,researchlink,researchcard,researchicon,questlink,questcard').reverse().forEach(element => {
+    if (!element.closest('pre,code')) element.replaceWith(renderBindingElement(element), ...element.childNodes);
+  });
+
   const finite = values => values.filter(Number.isFinite);
   const range = (min, max, fallbackMin, fallbackMax) => {
     const left = number(min, fallbackMin), right = number(max, fallbackMax);

@@ -1,3 +1,4 @@
+import { bindingTypeAtOffset } from '../parser/bindingIndexing';
 import { findOpenTagAttributeValue } from '../parser/documentModel';
 import { GuideNhAttributeSchema } from '../../common/schema';
 import { matchesTagName } from '../schema/schemaLookup';
@@ -13,6 +14,7 @@ const DynamicHoverCapabilities = new Set([
 	'commands',
 	'recipes',
 	'quests',
+	'bindings',
 	'pages',
 	'entities'
 ]);
@@ -72,6 +74,10 @@ export function resolveDynamicHoverRequest(
 			filters
 		};
 	}
+    if (/^(Binding|Research)(Link|Card|Icon)$/.test(tagName) && attributeName === 'id') {
+        const type = bindingTypeAtOffset(text, offset, tagName);
+        return type ? { capability: 'bindings', prefix: attributeValue, filters: { type } } : undefined;
+    }
 	const source = resolveRuntimeAttributeSource(tagName, attributeName);
 	const capability = source?.capability ?? resolveRuntimeCapability(tagName, attributeName, attribute);
 	if (!capability || !DynamicHoverCapabilities.has(capability)) {

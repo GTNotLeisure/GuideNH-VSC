@@ -146,16 +146,18 @@
     "lint": "eslint src",
     "test": "vscode-test",
     "verify": "npm run generate:schema && npm run lint && npm run compile && npm test",
-    "prepackage": "npm run compile && npm run bundle",
+    "prepackage": "npm run compile:production && npm run bundle",
     "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --out dist/guide-vsc.vsix",
-    "build": "npm run verify && npm run package"
+    "build": "npm run verify && npm run package",
+    "compile:production": "tsc -p tsconfig.production.json"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-uri": "^3.0.8",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

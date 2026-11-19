@@ -1,3 +1,4 @@
+import { BindingOccurrence, bindingIdentity, extractBindingOccurrences } from '../parser/bindingIndexing';
 import * as path from 'path';
 import { createGuideNhDocumentModel, GuideNhDocumentModel } from '../parser/documentModel';
 import { extractIndexedFrontmatterValues } from '../parser/frontmatterIndexing';
@@ -15,6 +16,8 @@ export interface GuideNhIndexedPage {
 	oreIds: string[];
 	fluidIds?: string[];
 	fluidLinks?: string[];
+	bindings?: BindingOccurrence[];
+	sourceText?: string;
 	frontmatterValues: Record<string, string[]>;
 	links: string[];
 	resourceLinks: string[];
@@ -87,6 +90,8 @@ export class GuideNhWorkspaceIndex {
 			oreIds,
 			fluidIds,
 			fluidLinks,
+			bindings: extractBindingOccurrences(text, model),
+            sourceText: text,
 			frontmatterValues,
 			links,
 			resourceLinks,
@@ -219,6 +224,23 @@ export class GuideNhWorkspaceIndex {
 		const uri = this.pageUrisByOreId.get(oreId)?.values().next().value;
 		return uri ? this.pages.get(uri) : undefined;
 	}
+
+    findBindingDefinitions(type: string, id: string): Array<{ page: GuideNhIndexedPage; binding: BindingOccurrence }> {
+        const identity = bindingIdentity(type, id);
+        return Array.from(this.pages.values()).flatMap(page => (page.bindings || [])
+            .filter(binding => binding.definition && bindingIdentity(binding.type, binding.id) === identity).map(binding => ({ page, binding })));
+    }
+
+    queryBindingIds(type: string, prefix: string): string[] {
+        return Array.from(new Set(Array.from(this.pages.values()).flatMap(page => (page.bindings || [])
+            .filter(binding => binding.type.trim().toLowerCase() === type.trim().toLowerCase() && binding.id.toLowerCase().includes(prefix.toLowerCase()))
+            .map(binding => binding.id)))).sort().slice(0, 200);
+    }
+
+    findBindingReferences(type: string, id: string): GuideNhIndexedPage[] {
+        const identity = bindingIdentity(type, id);
+        return Array.from(this.pages.values()).filter(page => (page.bindings || []).some(binding => bindingIdentity(binding.type, binding.id) === identity));
+    }
 
 	findFluidReference(fluidId: string): GuideNhIndexedPage | undefined {
 		const uri = this.pageUrisByFluidId.get(fluidId.split('#')[0].trim())?.values().next().value;

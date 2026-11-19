@@ -1,3 +1,4 @@
+import { bindingTypeAtOffset, bindingValueAtOffset } from '../parser/bindingIndexing';
 import { CompletionItem, CompletionItemKind, InsertTextFormat, Position, TextEdit } from 'vscode-languageserver/node';
 import { GuideNhAttributeSchema, GuideNhFrontmatterKey, GuideNhSchemaBundle, GuideNhTagSchema } from '../../common/schema';
 import { GuideNhResourceIndex } from '../index/resourceIndex';
@@ -54,6 +55,7 @@ export interface CompletionReplacementRange {
 	text: string;
 	start: number;
 	end: number;
+	quote?: string;
 }
 
 const StaticAttributeValueSources: StaticAttributeValueSource[] = [
@@ -84,6 +86,7 @@ const DynamicCompletionCapabilities = new Set([
 	'commands',
 	'recipes',
 	'quests',
+	'bindings',
 	'pages',
 	'entities'
 ]);
@@ -101,6 +104,13 @@ export function createGuideNhCompletionResult(
 	const maskedText = maskIgnoredMarkdownRanges(text);
 	const frontmatter = extractFrontmatter(text);
 	if (frontmatter && offset <= frontmatter.end) {
+		const binding = bindingValueAtOffset(text, offset);
+		if (binding?.path === 'bindings.id' && binding.type) {
+			const runtimeReplacement = { text, start: binding.start, end: binding.end, quote: binding.quote };
+			const items = index?.queryBindingIds(binding.type, binding.prefix).map(id => ({ label: id, kind: CompletionItemKind.Value, detail: binding.type })) || [];
+			return { items: applyCompletionReplacementRange(items, runtimeReplacement), runtimeReplacement,
+				dynamicRequest: { capability: 'bindings', prefix: binding.prefix, filters: { type: binding.type } } };
+		}
 		const frontmatterValueContext = findFrontmatterValueContext(text.slice(frontmatter.start, offset));
 		const runtimeReplacement = frontmatterValueContext
 			? createCompletionReplacementRange(text, offset, frontmatterValueContext.prefix)
@@ -137,6 +147,11 @@ export function createGuideNhCompletionResult(
 	const runtimeReplacement = attributeValueContext
 		? createCompletionReplacementRange(text, offset, attributeValueContext.prefix)
 		: undefined;
+    if (attributeValueContext?.attributeName === 'id' && /^(Binding|Research|Quest)(Link|Card|Icon)$/.test(attributeValueContext.tagName)) {
+        const type = bindingTypeAtOffset(text, offset, attributeValueContext.tagName);
+        const items = type && index ? index.queryBindingIds(type, attributeValueContext.prefix).map(id => ({ label: id, kind: CompletionItemKind.Value, detail: type })) : [];
+        return { items: applyCompletionReplacementRange(items, runtimeReplacement), dynamicRequest, runtimeReplacement };
+    }
 	if (attributeValueContext) {
 		const staticCompletions = shouldUseStaticAttributeCompletions(attributeValueContext, dynamicRequest)
 			? createAttributeValueCompletions(attributeValueContext, schema)
@@ -338,6 +353,10 @@ function resolveDynamicCompletionRequest(
 			filters
 		};
 	}
+    if (/^(Binding|Research)(Link|Card|Icon)$/.test(context.tagName || '') && context.attributeName === 'id') {
+        const type = bindingTypeAtOffset(text, offset, context.tagName);
+        return type ? { capability: 'bindings', prefix: context.prefix, filters: { type } } : undefined;
+    }
 	const source = resolveRuntimeAttributeSource(context.tagName, context.attributeName);
 	if (source && DynamicCompletionCapabilities.has(source.capability)) {
 		return {
@@ -378,7 +397,7 @@ function resolveFrontmatterDynamicCompletionRequest(
 	return {
 		capability,
 		prefix: context.prefix,
-		filters: {}
+		filters: capability === 'bindings' ? { type: context.path.join('.').startsWith('research_id') ? 'thaumcraft' : bindingTypeAtOffset(text, offset) || '' } : {}
 	};
 }
 
@@ -595,7 +614,7 @@ function createRuntimeAttributeValueCompletions(
 
 function findFrontmatterValueContext(before: string): FrontmatterValueContext | undefined {
 	const line = getCurrentLine(before);
-	const scalarValueMatch = line.match(/^(\s*)([A-Za-z_][\w.-]*)\s*:\s*([^\s]*)$/);
+	const scalarValueMatch = line.match(/^(\s*)(?:-\s*)?([A-Za-z_][\w.-]*)\s*:\s*([^\s]*)$/);
 	if (scalarValueMatch) {
 		const parentPath = findFrontmatterParentPath(before, scalarValueMatch[1].length);
 		return {
@@ -692,7 +711,12 @@ function createFrontmatterValueCompletions(
 	if (!context) {
 		return [];
 	}
-	const path = context.path.join('.');
+    const path = context.path.join('.');
+    if (path === 'research_id' || path === 'research_ids' || path === 'bindings.id') {
+        const type = path.startsWith('research_id') ? 'thaumcraft' : bindingTypeAtOffset(text, offset);
+        return type && index ? applyCompletionReplacementRange(index.queryBindingIds(type, context.prefix.replace(/^['"]/, ''))
+            .map(id => ({ label: id, kind: CompletionItemKind.Value, detail: type })), replacementRange) : [];
+    }
 	const capability = resolveFrontmatterRuntimeCapability(path);
 	const indexDetail = resolveFrontmatterIndexDetail(path);
 	if (!capability && !indexDetail) {
@@ -807,8 +831,6 @@ function resolveFrontmatterIndexDetail(path: string): string | undefined {
 			return 'Indexed item id';
 		case 'ore_ids':
 			return 'Indexed ore id';
-		case 'quest_ids':
-			return 'Indexed quest id';
 		case 'categories':
 			return 'Indexed category';
 		case 'navigation.required_mod':
@@ -903,13 +925,15 @@ export function applyCompletionReplacementRange(
 		return items;
 	}
 	return items.map((item) => {
-		const replacementText = item.insertText ?? item.label;
+		let replacementText = String(item.insertText ?? item.label);
+		if (replacementRange.quote === '"') { replacementText = JSON.stringify(replacementText).slice(1, -1); }
+		else if (replacementRange.quote === "'") { replacementText = replacementText.replace(/'/g, "''"); }
 		return {
 			...item,
 			textEdit: TextEdit.replace({
 				start: offsetToPosition(replacementRange.text, replacementRange.start),
 				end: offsetToPosition(replacementRange.text, replacementRange.end)
-			}, String(replacementText))
+			}, replacementText)
 		};
 	});
 }

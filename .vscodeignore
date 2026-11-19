@@ -17,7 +17,7 @@ out/test/**
 .yarnrc
 package-lock.json
 node_modules/**
-**/tsconfig.json
+**/tsconfig*.json
 **/eslint.config.mjs
 **/*.map
 **/*.ts

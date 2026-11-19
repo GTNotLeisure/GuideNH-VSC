@@ -108,6 +108,9 @@ export interface PreviewResolvePayload {
 }
 
 export interface PreviewResolveResultPayload {
+    type?: string;
+    state?: string;
+    prerequisites?: Array<{ type: string; id: string }>;
 	capability: string;
 	previewKey: string;
 	id: string;
