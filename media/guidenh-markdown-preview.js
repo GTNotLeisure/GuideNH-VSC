@@ -31,18 +31,6 @@
     else span.append(...content);
     return span;
   };
-  all('neirecipelink').forEach(element => {
-    const id = attr(element, 'id').trim(), handler = attr(element, 'handlerId').trim();
-    const mode = element.hasAttribute('mode') ? attr(element, 'mode').trim().toLowerCase() : (id ? 'recipes' : 'handler');
-    const error = !['handler', 'recipes', 'usage'].includes(mode) ? 'Unknown NEI action: ' + mode
-      : /[\u0000-\u001f\u007f-\u009f]/.test(attr(element, 'id') + attr(element, 'handlerId')) ? 'NEI targets must not contain control characters.'
-      : mode === 'handler' && (!handler || id) ? 'NEI handler mode requires handlerId and does not accept id.'
-      : mode !== 'handler' && !id ? 'NEI ' + mode + ' mode requires id.'
-      : !element.textContent.trim() && !element.querySelector('img,svg,itemicon,itemimage,itemid,blockid,keybind,playername,amount') ? 'NeiRecipeLink requires visible inline content.' : '';
-    const span = makeNeiSpan(error || Array.from(element.childNodes), attr(element, 'title'));
-    if (error) span.className = 'guidenh-preview-error';
-    element.replaceWith(span);
-  });
   all('[data-guidenh-nei-link]').forEach(element => { element.title = neiExplanation; });
 
   const bindingKey = (type, rawId) => {
@@ -388,6 +376,18 @@
   };
   all('barchart,columnchart,linechart,piechart,scatterchart').forEach(renderChart);
 
+  all('neirecipelink').forEach(element => {
+    const id = attr(element, 'id').trim(), handler = attr(element, 'handlerId').trim();
+    const mode = element.hasAttribute('mode') ? attr(element, 'mode').trim().toLowerCase() : (id ? 'recipes' : 'handler');
+    const error = !['handler', 'recipes', 'usage'].includes(mode) ? 'Unknown NEI action: ' + mode
+      : /[\u0000-\u001f\u007f-\u009f]/.test(attr(element, 'id') + attr(element, 'handlerId')) ? 'NEI targets must not contain control characters.'
+      : mode === 'handler' && (!handler || id) ? 'NEI handler mode requires handlerId and does not accept id.'
+      : mode !== 'handler' && !id ? 'NEI ' + mode + ' mode requires id.'
+      : !element.textContent.trim() && !element.querySelector('img,svg') ? 'NeiRecipeLink requires visible inline content.' : '';
+    const span = makeNeiSpan(error || Array.from(element.childNodes), attr(element, 'title'));
+    if (error) span.className = 'guidenh-preview-error';
+    element.replaceWith(span);
+  });
   const blockLabels = { gamescene:text.gameScene, scene:text.scene, recipe:text.recipe, recipefor:text.recipeLookup, recipesfor:text.recipeList, recipesusage:text.recipeUsage, recipeusage:text.recipeUsage, mermaid:text.mermaid, latex:text.latex, questcard:text.questCard, structure:text.structure, importstructure:text.importedStructure, importponder:text.importedPonder, barchart:text.barChart, columnchart:text.columnChart, linechart:text.lineChart, piechart:text.pieChart, scatterchart:text.scatterChart };
   Object.entries(blockLabels).forEach(([tag, label]) => all(tag).forEach(element => { if (element.classList.contains('guidenh-rendered')) return; element.classList.add('guidenh-rendered', 'guidenh-block'); const header = document.createElement('header'); header.textContent = label; const detail = attr(element, 'id') || attr(element, 'src') || attr(element, 'formula') || attr(element, 'title'); if (detail) { const code = document.createElement('code'); code.textContent = detail; header.append(' ', code); } element.prepend(header); }));
 })();
