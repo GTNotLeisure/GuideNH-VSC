@@ -15,7 +15,8 @@
     "entities",
     "structurelib",
     "pages",
-    "bindings"
+    "bindings",
+    "neiHandlers"
   ],
   "limits": {
     "maxMessageBytes": 262144,

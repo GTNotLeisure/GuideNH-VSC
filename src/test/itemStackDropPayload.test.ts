@@ -9,7 +9,8 @@ suite('GuideNH item stack drop payload', () => {
 		const payload = createItemStackDropPayload('minecraft:stone', 'picker-entry');
 		assert.deepStrictEqual(parseItemStackDropPayload(payload), {
 			id: 'minecraft:stone',
-			source: 'picker-entry'
+			source: 'picker-entry',
+			capability: 'items'
 		});
 	});
 
@@ -17,7 +18,8 @@ suite('GuideNH item stack drop payload', () => {
 		const payload = createItemStackDropPayload('minecraft:crafting_table', 'picker-apply');
 		assert.deepStrictEqual(parseItemStackDropPayload(payload), {
 			id: 'minecraft:crafting_table',
-			source: 'picker-apply'
+			source: 'picker-apply',
+			capability: 'items'
 		});
 	});
 

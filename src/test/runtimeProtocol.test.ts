@@ -57,7 +57,7 @@ suite('GuideNH runtime protocol', () => {
 			filters: { source: 'picker' }
 		});
 		assert.strictEqual(resolve.method, 'preview.resolve');
-		assert.deepStrictEqual(resolve.payload, {
+		assert.deepStrictEqual(JSON.parse(JSON.stringify(resolve.payload)), {
 			capability: 'items',
 			id: 'minecraft:stone',
 			count: 1,

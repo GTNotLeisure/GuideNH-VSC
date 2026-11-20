@@ -131,15 +131,15 @@ suite('GuideNH runtime completion', () => {
 		assert.deepStrictEqual(completions.map((item) => item.label), []);
 	});
 
-	test('completes quest_ids and navigation icons from runtime semantic cache', async () => {
+	test('requests typed quest bindings and completes navigation icons from runtime semantic cache', async () => {
 		const schema = await loadGuideNhSchema(path.join(__dirname, '..', '..', 'src', 'schema'));
 		const cache = new SemanticCache();
-		cache.replace('quests', 1, [{ id: '550e8400-e29b-41d4-a716-446655440000', label: 'Getting Started' }]);
 		cache.replace('items', 1, [{ id: 'minecraft:compass', label: 'Compass', detail: 'minecraft:compass:0' }]);
 
-		const questItems = createGuideNhCompletions(
-			'---\nquest_ids:\n  - 550e8400-e29b\n---\n',
-			28,
+		const questText = '---\nbindings:\n  - {type: betterquesting, id: 550e8400-e29b}\n---\n';
+		const questResult = createGuideNhCompletionResult(
+			questText,
+			questText.indexOf('550e8400-e29b') + '550e8400-e29b'.length,
 			schema,
 			undefined,
 			cache
@@ -152,7 +152,7 @@ suite('GuideNH runtime completion', () => {
 			cache
 		);
 
-		assert.deepStrictEqual(questItems.map((item) => item.label), ['550e8400-e29b-41d4-a716-446655440000']);
+		assert.deepStrictEqual(questResult.dynamicRequest, { capability: 'bindings', prefix: '550e8400-e29b', filters: { type: 'betterquesting' } });
 		assert.deepStrictEqual(iconItems.map((item) => item.label), ['Compass']);
 		assert.strictEqual(iconItems[0].insertText, 'minecraft:compass');
 	});

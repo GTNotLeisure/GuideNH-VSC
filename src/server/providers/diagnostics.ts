@@ -144,8 +144,7 @@ function createTagSpecificDiagnostics(text: string, tag: GuideNhParsedTag): Diag
 		const error = validateNeiAttributes(tag.attributes);
 		const closing = text.indexOf('</NeiRecipeLink>', tag.end);
 		const body = closing >= 0 ? text.slice(tag.end, closing) : '';
-		const visualContent = /<(?:ItemIcon|ItemImage|ItemId|BlockId|KeyBind|PlayerName|Amount|img)\b/i.test(body);
-		const empty = tag.selfClosing || (closing >= 0 && !body.replace(/<[^>]*>/g, '').trim() && !visualContent);
+		const empty = tag.selfClosing || (closing >= 0 && !body.trim());
 		return error || empty ? [createDiagnostic(text, tag.start, tag.end, error || 'NeiRecipeLink requires visible inline content.')] : [];
 	}
 	if (!matchesTagName(tag.name, 'FloatingImage')) {

@@ -1,4 +1,5 @@
 import { bindingTypeAtOffset, bindingValueAtOffset } from '../parser/bindingIndexing';
+import { encodeNeiCompletionValue, findNeiCompletionContext } from '../parser/neiCompletionContext';
 import { CompletionItem, CompletionItemKind, InsertTextFormat, Position, TextEdit } from 'vscode-languageserver/node';
 import { GuideNhAttributeSchema, GuideNhFrontmatterKey, GuideNhSchemaBundle, GuideNhTagSchema } from '../../common/schema';
 import { GuideNhResourceIndex } from '../index/resourceIndex';
@@ -15,7 +16,7 @@ import {
 	resolveRuntimeAttributeSource
 } from '../runtime/runtimeAttributeSources';
 
-export const GuideNhCompletionTriggerCharacters = ['<', '/', '(', ' ', '"', '\'', '`', '=', '+', ':', '^', '.'];
+export const GuideNhCompletionTriggerCharacters = ['<', '/', '(', ' ', '"', '\'', '`', '=', '+', ':', '^', '.', '&', '[', '?'];
 
 interface AttributeValueContext {
 	tagName: string;
@@ -56,6 +57,7 @@ export interface CompletionReplacementRange {
 	start: number;
 	end: number;
 	quote?: string;
+	uriEncoded?: boolean;
 }
 
 const StaticAttributeValueSources: StaticAttributeValueSource[] = [
@@ -85,6 +87,7 @@ const DynamicCompletionCapabilities = new Set([
 	'keybinds',
 	'commands',
 	'recipes',
+	'neiHandlers',
 	'quests',
 	'bindings',
 	'pages',
@@ -145,9 +148,9 @@ export function createGuideNhCompletionResult(
 	const attributeValueContext = findAttributeValueContext(maskedText, offset);
 	const dynamicRequest = attributeValueContext ? resolveDynamicCompletionRequest(text, offset, schema, attributeValueContext) : undefined;
 	const runtimeReplacement = attributeValueContext
-		? createCompletionReplacementRange(text, offset, attributeValueContext.prefix)
+		? createResourceCompletionReplacementRange(text, offset, attributeValueContext.prefix)
 		: undefined;
-    if (attributeValueContext?.attributeName === 'id' && /^(Binding|Research|Quest)(Link|Card|Icon)$/.test(attributeValueContext.tagName)) {
+    if (attributeValueContext?.attributeName === 'id' && /^(Binding|Research)(Link|Card|Icon)$/.test(attributeValueContext.tagName)) {
         const type = bindingTypeAtOffset(text, offset, attributeValueContext.tagName);
         const items = type && index ? index.queryBindingIds(type, attributeValueContext.prefix).map(id => ({ label: id, kind: CompletionItemKind.Value, detail: type })) : [];
         return { items: applyCompletionReplacementRange(items, runtimeReplacement), dynamicRequest, runtimeReplacement };
@@ -157,7 +160,7 @@ export function createGuideNhCompletionResult(
 			? createAttributeValueCompletions(attributeValueContext, schema)
 			: [];
 		if (staticCompletions.length > 0) {
-			return { items: staticCompletions, dynamicRequest, runtimeReplacement };
+			return { items: applyCompletionReplacementRange(staticCompletions, runtimeReplacement), dynamicRequest, runtimeReplacement };
 		}
 		const referenceCompletions = createAttributeReferenceValueCompletions(
 			attributeValueContext,
@@ -200,7 +203,26 @@ export function createGuideNhCompletionResult(
 		};
 	}
 
-	const markdownLinkCompletions = createMarkdownLinkTargetCompletions(text, offset, index, documentUri);
+	const action = findNeiCompletionContext(maskedText, offset);
+	if (action) {
+		const runtimeReplacement = { text, start: action.start, end: action.end, uriEncoded: !!action.capability };
+		const indexedItems = action.capability === 'items'
+			? ['item_id', 'item_ids', 'navigation.icon', 'navigation.icons'].flatMap(path =>
+				createIndexedFrontmatterValueCompletions(path, resolveFrontmatterIndexDetail(path), action.prefix, index))
+			: [];
+		const items = action.capability
+			? mergeCompletionItems([...indexedItems, ...createRuntimeSemanticCompletionItems(action.capability, cache?.queryPrefix(action.capability, action.prefix) ?? [])])
+			: action.choices.filter(choice => choice.toLowerCase().startsWith(action.prefix.toLowerCase())).map(choice => ({ label: choice, insertText: choice, kind: CompletionItemKind.Value }));
+		return { items: applyCompletionReplacementRange(items, runtimeReplacement), runtimeReplacement,
+			dynamicRequest: action.capability ? { capability: action.capability, prefix: action.prefix, filters: {} } : undefined };
+	}
+	if (maskedText.slice(0, offset).endsWith('&[')) {
+		const items = Object.entries(schema.snippets.snippets).filter(([, snippet]) => snippet.prefix === '&[')
+			.map(([label, snippet]) => ({ label, insertText: snippet.body.join('\n'), detail: snippet.description,
+				kind: CompletionItemKind.Snippet, insertTextFormat: InsertTextFormat.Snippet }));
+		return { items: withReplacementRange(items, text, offset - 2, offset) };
+	}
+	const markdownLinkCompletions = createMarkdownLinkTargetCompletions(maskedText, offset, index, documentUri);
 	if (markdownLinkCompletions) {
 		return { items: markdownLinkCompletions };
 	}
@@ -614,6 +636,11 @@ function createRuntimeAttributeValueCompletions(
 
 function findFrontmatterValueContext(before: string): FrontmatterValueContext | undefined {
 	const line = getCurrentLine(before);
+	const listValueMatch = line.match(/^(\s*)-\s+([^\s]*)$/);
+	if (listValueMatch) {
+		const parentPath = findFrontmatterParentPath(before, listValueMatch[1].length + 1);
+		return parentPath.length > 0 ? { path: parentPath, prefix: listValueMatch[2] } : undefined;
+	}
 	const scalarValueMatch = line.match(/^(\s*)(?:-\s*)?([A-Za-z_][\w.-]*)\s*:\s*([^\s]*)$/);
 	if (scalarValueMatch) {
 		const parentPath = findFrontmatterParentPath(before, scalarValueMatch[1].length);
@@ -622,18 +649,7 @@ function findFrontmatterValueContext(before: string): FrontmatterValueContext | 
 			prefix: scalarValueMatch[3]
 		};
 	}
-	const listValueMatch = line.match(/^(\s*)-\s+([^\s]*)$/);
-	if (!listValueMatch) {
-		return undefined;
-	}
-	const parentPath = findFrontmatterParentPath(before, listValueMatch[1].length + 1);
-	if (parentPath.length === 0) {
-		return undefined;
-	}
-	return {
-		path: parentPath,
-		prefix: listValueMatch[2]
-	};
+	return undefined;
 }
 
 function createPageValueCompletions(
@@ -926,6 +942,7 @@ export function applyCompletionReplacementRange(
 	}
 	return items.map((item) => {
 		let replacementText = String(item.insertText ?? item.label);
+		if (replacementRange.uriEncoded) { replacementText = encodeNeiCompletionValue(replacementText); }
 		if (replacementRange.quote === '"') { replacementText = JSON.stringify(replacementText).slice(1, -1); }
 		else if (replacementRange.quote === "'") { replacementText = replacementText.replace(/'/g, "''"); }
 		return {
@@ -1127,14 +1144,14 @@ function createTagSnippetCompletions(
 }
 
 function createTagSnippet(tag: GuideNhTagSchema): string {
-	if (tag.kind === 'inline' || tag.children.length === 0) {
+	if (!tag.container && (tag.kind === 'inline' || tag.children.length === 0)) {
 		return `<${tag.name} $0 />`;
 	}
-	return `<${tag.name}>\n  $0\n</${tag.name}>`;
+	return tag.kind === 'inline' ? `<${tag.name}>$0</${tag.name}>` : `<${tag.name}>\n  $0\n</${tag.name}>`;
 }
 
 function createSelfContainedTagSnippet(tag: GuideNhTagSchema): string {
-	if (tag.kind === 'inline' || tag.children.length === 0) {
+	if (!tag.container && (tag.kind === 'inline' || tag.children.length === 0)) {
 		return `<${tag.name} $0 />`;
 	}
 	return `<${tag.name}>$0</${tag.name}>`;

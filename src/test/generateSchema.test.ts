@@ -350,7 +350,7 @@ suite('GuideNH schema generator', () => {
 		});
 	});
 
-	test('adds tooltip compatibility attributes to link-like inline tags', () => {
+	test('keeps current tooltip attributes on link-like inline tags', () => {
 		const enhanced = enhanceGeneratedTagsFromJavaSources({
 			ItemLink: {
 				name: 'ItemLink',
@@ -396,10 +396,7 @@ suite('GuideNH schema generator', () => {
 			type: 'boolean',
 			valueStyle: 'string'
 		});
-		assert.deepStrictEqual(enhanced.QuestLink.attributes.show_tooltip, {
-			type: 'boolean',
-			valueStyle: 'string'
-		});
+		assert.strictEqual(enhanced.QuestLink.attributes.show_tooltip, undefined);
 		assert.deepStrictEqual(enhanced.QuestCard.attributes.showTooltip, {
 			type: 'boolean',
 			valueStyle: 'string'

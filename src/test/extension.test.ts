@@ -33,7 +33,7 @@ suite('GuideNH extension automation', () => {
 			devDependencies?: Record<string, string>;
 		};
 		assert.strictEqual(packageJson.scripts.build, 'npm run verify && npm run package');
-		assert.strictEqual(packageJson.scripts.prepackage, 'npm run compile && npm run bundle');
+		assert.strictEqual(packageJson.scripts.prepackage, 'npm run compile:production && npm run bundle');
 		assert.strictEqual(
 			packageJson.scripts.package,
 			`node -e "require('fs').mkdirSync('dist', { recursive: true })" && vsce package --out dist/guide-vsc.vsix`
@@ -53,7 +53,7 @@ suite('GuideNH extension automation', () => {
 		const vscodeIgnore = fs.readFileSync(path.join(__dirname, '..', '..', '.vscodeignore'), 'utf8');
 		assert.strictEqual(packageJson.scripts.bundle, 'node ./out/scripts/bundle.js');
 		assert.strictEqual(packageJson.scripts['vscode:prepublish'], undefined);
-		assert.strictEqual(packageJson.scripts.prepackage, 'npm run compile && npm run bundle');
+		assert.strictEqual(packageJson.scripts.prepackage, 'npm run compile:production && npm run bundle');
 		assert.ok(packageJson.devDependencies?.esbuild);
 		assert.match(vscodeIgnore, /^out\/\*\*$/m);
 		assert.match(vscodeIgnore, /^!out\/extension\.js$/m);

@@ -661,13 +661,15 @@ suite('GuideNH diagnostics', () => {
 		assert.strictEqual(diagnostics.some((item: Diagnostic) => item.message.includes('Unknown GuideNH tag u')), false);
 	});
 
-	test('accepts QuestLink tooltip compatibility attributes', async () => {
+	test('accepts the current QuestLink tooltip attribute and rejects the removed alias', async () => {
 		const schema = await loadGuideNhSchema(path.join(__dirname, '..', '..', 'src', 'schema'));
 		const text = [
 			'<QuestLink id="AAAAAAAAAAAAAAAAAAAAHw==" text="Tin" showTooltip="false" />',
 			'<QuestLink id="AAAAAAAAAAAAAAAAAAAAHw==" text="Tin" show_tooltip="false" />'
 		].join('\n');
-		assert.deepStrictEqual(createGuideNhDiagnostics(text, schema), []);
+		const diagnostics = createGuideNhDiagnostics(text, schema);
+		assert.strictEqual(diagnostics.length, 1);
+		assert.match(diagnostics[0].message, /show_tooltip/);
 	});
 
 	test('accepts current FloatingImage crop aliases and rejects conflicting alias pairs', async () => {

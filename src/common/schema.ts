@@ -1,5 +1,5 @@
 export interface GuideNhAttributeSchema {
-	type: 'string' | 'number' | 'boolean' | 'enum' | 'item' | 'fluid' | 'binding' | 'ore' | 'resource' | 'page' | 'color';
+	type: 'string' | 'number' | 'boolean' | 'enum' | 'item' | 'fluid' | 'binding' | 'recipeHandler' | 'ore' | 'resource' | 'page' | 'color';
 	required?: boolean;
 	requiredWhenMissing?: string[];
 	values?: string[];
@@ -13,6 +13,7 @@ export interface GuideNhTagSchema {
 	description: string;
 	attributes: Record<string, GuideNhAttributeSchema>;
 	children: string[];
+	container?: boolean;
 	/**
 	 * Set when the container's body also takes ordinary block content, such as an annotation tooltip or a
 	 * details body. `children` then ranks completion rather than restricting it, so validation must accept

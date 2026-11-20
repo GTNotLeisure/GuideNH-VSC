@@ -14,6 +14,7 @@ export interface ItemStackContext {
 }
 
 const ItemStackAttributeTargets = new Map<string, ReadonlySet<string>>([
+	['neirecipelink', new Set(['id'])],
 	['fluidlink', new Set(['id'])],
 	['fluidimage', new Set(['id'])],
 	['fluidicon', new Set(['id'])],

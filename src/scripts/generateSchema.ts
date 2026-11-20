@@ -67,6 +67,13 @@ export function enhanceGeneratedTagsFromJavaSources(
 	applyReferenceEnhancements(enhanced);
 	applyFluidEnhancements(enhanced);
 	applyBindingEnhancements(enhanced);
+	for (const source of sources) {
+		for (const match of source.text.matchAll(/sink\s*\.\s*containerTags\(([\s\S]*?)\)\s*;/g)) {
+			for (const name of match[1].matchAll(/"([^"\n]+)"/g)) {
+				ensureContributorTag(enhanced, name[1]).container = true;
+			}
+		}
+	}
 	return enhanced;
 }
 
@@ -1121,7 +1128,7 @@ function applyReferenceEnhancements(tags: Record<string, GuideNhTagSchema>): voi
 		description: 'Generated from GuideNH NEI inline navigation. Opens NEI in game; browser previews are inactive.',
 		attributes: sortAttributes({
 			id: { type: 'item', valueStyle: 'string', description: 'Required for recipes and usage; forbidden in handler mode.' },
-			handlerId: { type: 'string', valueStyle: 'string', description: 'Exact overlay or handler ID, case-insensitive. Required in handler mode.' },
+			handlerId: { type: 'recipeHandler', valueStyle: 'string', description: 'Exact overlay or handler ID, case-insensitive. Required in handler mode.' },
 			mode: { type: 'enum', values: ['handler', 'recipes', 'usage'], valueStyle: 'string', description: 'Defaults to recipes with id, otherwise handler.' },
 			title: { type: 'string', valueStyle: 'string' }
 		}),
@@ -1615,6 +1622,8 @@ function contributorAttributeSchema(kind: string, values: string[]): GuideNhAttr
 			return { type: 'binding', valueStyle: 'string' };
 		case 'FLUID_ID':
 			return { type: 'fluid', valueStyle: 'string' };
+		case 'RECIPE_HANDLER_ID':
+			return { type: 'recipeHandler', valueStyle: 'string' };
 		case 'ITEM_ID':
 		case 'BLOCK_ID':
 			return { type: 'item' };
@@ -2040,7 +2049,8 @@ function mergeAttributesMap(
 	for (const name of Array.from(names).sort((left, right) => left.localeCompare(right))) {
 		merged[name] = {
 			...(generated[name] ?? {}),
-			...(existing[name] ?? {})
+			...(existing[name] ?? {}),
+			...(generated[name]?.type === 'recipeHandler' ? { type: 'recipeHandler' } : {})
 		} as GuideNhAttributeSchema;
 	}
 	return merged;

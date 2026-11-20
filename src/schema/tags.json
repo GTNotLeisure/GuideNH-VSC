@@ -20,7 +20,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Amount": {
       "name": "Amount",
@@ -71,7 +72,8 @@
       },
       "children": [],
       "snippets": [],
-      "forwardsAttributes": true
+      "forwardsAttributes": true,
+      "container": true
     },
     "b": {
       "name": "b",
@@ -226,7 +228,8 @@
         "ReferenceLine",
         "Series"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "BindingCard": {
       "name": "BindingCard",
@@ -442,7 +445,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "BlockAnnotationTemplate": {
       "name": "BlockAnnotationTemplate",
@@ -476,7 +480,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "BlockImage": {
       "name": "BlockImage",
@@ -637,7 +642,8 @@
       "children": [
         "BlockStat"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "BoxAnnotation": {
       "name": "BoxAnnotation",
@@ -700,7 +706,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "br": {
       "name": "br",
@@ -749,7 +756,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Category": {
       "name": "Category",
@@ -944,7 +952,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Column": {
       "name": "Column",
@@ -980,7 +989,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "ColumnChart": {
       "name": "ColumnChart",
@@ -1127,7 +1137,8 @@
         "ReferenceLine",
         "Series"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "CommandLink": {
       "name": "CommandLink",
@@ -1148,7 +1159,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Comment": {
       "name": "Comment",
@@ -1156,7 +1168,8 @@
       "description": "Generated from GuideNH Comment compiler source.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "ContentTabs": {
       "name": "ContentTabs",
@@ -1213,7 +1226,8 @@
       "children": [
         "Tab"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "CsvTable": {
       "name": "CsvTable",
@@ -1251,7 +1265,8 @@
       "description": "Declared by the GuideNH syntax registry.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "del": {
       "name": "del",
@@ -1294,7 +1309,8 @@
       "snippets": [],
       "preferredChildren": [
         "summary"
-      ]
+      ],
+      "container": true
     },
     "DiamondAnnotation": {
       "name": "DiamondAnnotation",
@@ -1336,7 +1352,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "div": {
       "name": "div",
@@ -1344,7 +1361,8 @@
       "description": "Generated from GuideNH div compiler source.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "dotted": {
       "name": "dotted",
@@ -1360,7 +1378,8 @@
       "description": "Declared by the GuideNH syntax registry.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "em": {
       "name": "em",
@@ -1504,7 +1523,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Expr": {
       "name": "Expr",
@@ -1516,7 +1536,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Facing": {
       "name": "Facing",
@@ -1563,7 +1584,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Flip": {
       "name": "Flip",
@@ -1684,7 +1706,8 @@
         "ImageAnnotation",
         "SoundArea"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "FluidIcon": {
       "name": "FluidIcon",
@@ -1835,7 +1858,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Function": {
       "name": "Function",
@@ -2017,7 +2041,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "FunctionGraph": {
       "name": "FunctionGraph",
@@ -2147,7 +2172,8 @@
         "Plot",
         "Point"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "GameScene": {
       "name": "GameScene",
@@ -2344,7 +2370,8 @@
       ],
       "snippets": [
         "guidenh.gameScene"
-      ]
+      ],
+      "container": true
     },
     "GregTechActiveController": {
       "name": "GregTechActiveController",
@@ -2517,7 +2544,8 @@
       "snippets": [],
       "preferredChildren": [
         "Else"
-      ]
+      ],
+      "container": true
     },
     "IfEq": {
       "name": "IfEq",
@@ -2535,7 +2563,8 @@
       "snippets": [],
       "preferredChildren": [
         "Else"
-      ]
+      ],
+      "container": true
     },
     "IfExist": {
       "name": "IfExist",
@@ -2550,7 +2579,8 @@
       "snippets": [],
       "preferredChildren": [
         "Else"
-      ]
+      ],
+      "container": true
     },
     "image": {
       "name": "image",
@@ -2615,7 +2645,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "img": {
       "name": "img",
@@ -2796,7 +2827,8 @@
       "attributes": {},
       "children": [],
       "snippets": [],
-      "preferredChildren": []
+      "preferredChildren": [],
+      "container": true
     },
     "InputAnnotation": {
       "name": "InputAnnotation",
@@ -2915,7 +2947,8 @@
         "ItemIcon",
         "FluidIcon"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "ItemIcon": {
       "name": "ItemIcon",
@@ -3050,7 +3083,8 @@
       "description": "Generated from GuideNH kbd compiler source.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "KeyBind": {
       "name": "KeyBind",
@@ -3112,7 +3146,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Len": {
       "name": "Len",
@@ -3155,7 +3190,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "li": {
       "name": "li",
@@ -3246,7 +3282,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "LineChart": {
       "name": "LineChart",
@@ -3395,7 +3432,8 @@
         "ReferenceLine",
         "Series"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "LinePoint": {
       "name": "LinePoint",
@@ -3512,7 +3550,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "mark": {
       "name": "mark",
@@ -3525,7 +3564,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Mermaid": {
       "name": "Mermaid",
@@ -3557,7 +3597,8 @@
       "children": [
         "NodeContent"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "NeiRecipeLink": {
       "name": "NeiRecipeLink",
@@ -3565,7 +3606,7 @@
       "description": "Generated from GuideNH NEI inline navigation. Opens NEI in game; browser previews are inactive.",
       "attributes": {
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string",
           "description": "Exact overlay or handler ID, case-insensitive. Required in handler mode."
         },
@@ -3592,7 +3633,8 @@
       "children": [],
       "snippets": [
         "<NeiRecipeLink handlerId=\"${1:gt.recipe.cokeoven}\">${2:Check NEI}</NeiRecipeLink>"
-      ]
+      ],
+      "container": true
     },
     "NodeContent": {
       "name": "NodeContent",
@@ -3605,7 +3647,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "NoInclude": {
       "name": "NoInclude",
@@ -3614,7 +3657,8 @@
       "attributes": {},
       "children": [],
       "snippets": [],
-      "preferredChildren": []
+      "preferredChildren": [],
+      "container": true
     },
     "ol": {
       "name": "ol",
@@ -3636,7 +3680,8 @@
       "attributes": {},
       "children": [],
       "snippets": [],
-      "preferredChildren": []
+      "preferredChildren": [],
+      "container": true
     },
     "Orientation": {
       "name": "Orientation",
@@ -3748,7 +3793,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "p": {
       "name": "p",
@@ -3799,7 +3845,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "PadRight": {
       "name": "PadRight",
@@ -3842,7 +3889,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Param": {
       "name": "Param",
@@ -3861,7 +3909,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Particle": {
       "name": "Particle",
@@ -3974,7 +4023,8 @@
       "children": [
         "Slice"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "PieInset": {
       "name": "PieInset",
@@ -4017,7 +4067,8 @@
       "children": [
         "Slice"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "PlaceBlock": {
       "name": "PlaceBlock",
@@ -4209,7 +4260,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Point": {
       "name": "Point",
@@ -4289,7 +4341,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "pre": {
       "name": "pre",
@@ -4382,7 +4435,7 @@
           "description": "Handler ids to skip unless this tag asks for them. Comma separated."
         },
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string",
           "description": "Recipe handler id."
         },
@@ -4470,7 +4523,7 @@
           "description": "Handler ids to skip unless this tag asks for them. Comma separated."
         },
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string"
         },
         "handlerName": {
@@ -4553,7 +4606,7 @@
           "description": "Handler ids to skip unless this tag asks for them. Comma separated."
         },
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string"
         },
         "handlerName": {
@@ -4636,7 +4689,7 @@
           "description": "Handler ids to skip unless this tag asks for them. Comma separated."
         },
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string"
         },
         "handlerName": {
@@ -4719,7 +4772,7 @@
           "description": "Handler ids to skip unless this tag asks for them. Comma separated."
         },
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string"
         },
         "handlerName": {
@@ -4867,7 +4920,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "ReplaceBlock": {
       "name": "ReplaceBlock",
@@ -5065,7 +5119,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "ScatterChart": {
       "name": "ScatterChart",
@@ -5202,7 +5257,8 @@
         "ReferenceLine",
         "Series"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Scene": {
       "name": "Scene",
@@ -5377,7 +5433,8 @@
         "Tier",
         "Weather"
       ],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Series": {
       "name": "Series",
@@ -5567,7 +5624,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "span": {
       "name": "span",
@@ -5575,7 +5633,8 @@
       "description": "Declared by the GuideNH syntax registry.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Special": {
       "name": "Special",
@@ -5657,7 +5716,8 @@
       "children": [],
       "snippets": [
         "guidenh.spoiler"
-      ]
+      ],
+      "container": true
     },
     "strong": {
       "name": "strong",
@@ -5691,7 +5751,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "sub": {
       "name": "sub",
@@ -5734,7 +5795,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "SubPages": {
       "name": "SubPages",
@@ -5768,7 +5830,8 @@
       "description": "Generated from GuideNH details summary support.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "sup": {
       "name": "sup",
@@ -5776,7 +5839,8 @@
       "description": "Generated from GuideNH sup compiler source.",
       "attributes": {},
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Switch": {
       "name": "Switch",
@@ -5792,7 +5856,8 @@
       "preferredChildren": [
         "Case",
         "Default"
-      ]
+      ],
+      "container": true
     },
     "Tab": {
       "name": "Tab",
@@ -5804,7 +5869,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "table": {
       "name": "table",
@@ -6003,7 +6069,8 @@
         "Arg",
         "Param"
       ],
-      "forwardsAttributes": true
+      "forwardsAttributes": true,
+      "container": true
     },
     "TextAnnotation": {
       "name": "TextAnnotation",
@@ -6116,7 +6183,8 @@
         "OutlineAnnotation",
         "TextAnnotation",
         "BlockAnnotationTemplate"
-      ]
+      ],
+      "container": true
     },
     "tfoot": {
       "name": "tfoot",
@@ -6329,7 +6397,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "tr": {
       "name": "tr",
@@ -6415,7 +6484,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "u": {
       "name": "u",
@@ -6479,7 +6549,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "UrlEncode": {
       "name": "UrlEncode",
@@ -6522,7 +6593,8 @@
         }
       },
       "children": [],
-      "snippets": []
+      "snippets": [],
+      "container": true
     },
     "Usage": {
       "name": "Usage",
@@ -6553,7 +6625,7 @@
           "description": "Handler ids to skip unless this tag asks for them. Comma separated."
         },
         "handlerId": {
-          "type": "string",
+          "type": "recipeHandler",
           "valueStyle": "string"
         },
         "handlerName": {

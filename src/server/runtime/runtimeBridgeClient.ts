@@ -66,6 +66,7 @@ export class RuntimeBridgeClient {
 		'sounds',
 		'keybinds',
 		'recipes',
+		'neiHandlers',
 		'quests',
 		'entities',
 		'structurelib',

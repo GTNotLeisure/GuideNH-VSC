@@ -14,6 +14,7 @@ const RuntimeAttributeSources: RuntimeAttributeSource[] = [
 	...['Series', 'LineSeries', 'Slice', 'ContentTabs'].map(tagName => ({ tagName, attributeName: 'iconFluid', capability: 'fluids' })),
 	{ tagName: 'ContentTabs', attributeName: 'icon_fluid', capability: 'fluids' },
 	{ tagName: 'NeiRecipeLink', attributeName: 'id', capability: 'items' },
+	{ tagName: 'NeiRecipeLink', attributeName: 'handlerId', capability: 'neiHandlers' },
 	{ tagName: 'ItemLink', attributeName: 'id', capability: 'items' },
 	{ tagName: 'ItemLink', attributeName: 'ore', capability: 'ores' },
 	{ tagName: 'ItemImage', attributeName: 'id', capability: 'items' },
@@ -66,6 +67,7 @@ const FrontmatterRuntimeCapabilities = new Map<string, string>([
 const RuntimeAttributeTypeCapabilities = new Map<GuideNhAttributeSchema['type'], string>([
 	['fluid', 'fluids'],
 	['binding', 'bindings'],
+	['recipeHandler', 'neiHandlers'],
 	['item', 'items'],
 	['ore', 'ores'],
 	['page', 'pages']
