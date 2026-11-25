@@ -1,9 +1,21 @@
-import * as vscode from 'vscode';
-import { MarkdownString } from 'vscode';
+import {
+	commands,
+	DecorationOptions,
+	DecorationRangeBehavior,
+	Disposable,
+	MarkdownString,
+	Position,
+	Range,
+	TextDocument,
+	TextEditor,
+	TextEditorDecorationType,
+	window,
+	workspace
+} from 'vscode';
 import { localize } from '../localization';
 import { PreviewResolveResultPayload } from '../../common/protocol';
 import { ItemStackContextCache } from './itemStackContextCache';
-import { createFallbackInlineIconUri, createSizedInlineIconUri } from './itemStackDecorationAssets';
+import { createFallbackInlineIconUri, createPreviewDataUri } from './itemStackDecorationAssets';
 import { renderMinecraftFormattingHtml, stripMinecraftFormatting } from './itemStackTextFormatting';
 import {
 	isGuideNhPreviewDocument,
@@ -18,55 +30,63 @@ interface ItemStackDecorationState {
 	preview?: PreviewResolveResultPayload;
 }
 
-export class ItemStackDecorationController implements vscode.Disposable {
+export class ItemStackDecorationController implements Disposable {
 	private static readonly maxVisibleContexts = 24;
 	private static readonly resolveConcurrency = 4;
-	private readonly disposables: vscode.Disposable[] = [];
+	private readonly disposables: Disposable[] = [];
 	private readonly refreshByUri = new Map<string, NodeJS.Timeout>();
-	private readonly inlineDecorationType: vscode.TextEditorDecorationType;
-	private readonly editorState = new WeakMap<vscode.TextEditor, ItemStackDecorationState[]>();
+	private readonly gutterDecorationType: TextEditorDecorationType;
+	private readonly hoverDecorationType: TextEditorDecorationType;
+	private readonly refreshVersionByEditor = new WeakMap<TextEditor, number>();
+	private isDisposed = false;
 
 	public constructor(
 		private readonly previewClient: ItemStackPreviewClient,
 		private readonly pickerPanel: ItemStackPickerPanel,
 		private readonly contextCache: ItemStackContextCache
 	) {
-		this.inlineDecorationType = vscode.window.createTextEditorDecorationType({
-			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+		this.gutterDecorationType = window.createTextEditorDecorationType({
+			rangeBehavior: DecorationRangeBehavior.ClosedClosed,
+			gutterIconPath: createFallbackInlineIconUri(),
+			gutterIconSize: 'contain'
 		});
-		this.disposables.push(this.inlineDecorationType);
+		this.hoverDecorationType = window.createTextEditorDecorationType({
+			rangeBehavior: DecorationRangeBehavior.ClosedClosed
+		});
+		this.disposables.push(this.gutterDecorationType, this.hoverDecorationType);
 		this.disposables.push(
-			vscode.window.onDidChangeVisibleTextEditors((editors) => {
+			window.onDidChangeVisibleTextEditors((editors) => {
 				for (const editor of editors) {
 					this.scheduleRefresh(editor, 20);
 				}
 			}),
-			vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
+			window.onDidChangeTextEditorVisibleRanges((event) => {
 				this.scheduleRefresh(event.textEditor, 50);
 			}),
-			vscode.window.onDidChangeActiveTextEditor((editor) => {
+			window.onDidChangeActiveTextEditor((editor) => {
 				if (editor) {
 					this.scheduleRefresh(editor, 20);
 				}
 			}),
-			vscode.workspace.onDidChangeTextDocument((event) => {
-				for (const editor of vscode.window.visibleTextEditors) {
+			workspace.onDidChangeTextDocument((event) => {
+				for (const editor of window.visibleTextEditors) {
 					if (editor.document.uri.toString() !== event.document.uri.toString()) {
 						continue;
 					}
 					this.scheduleRefresh(editor, 90);
 				}
 			}),
-			vscode.commands.registerCommand('guide-vsc.openItemStackPicker', async (position?: unknown) => {
+			commands.registerCommand('guide-vsc.openItemStackPicker', async (position?: unknown) => {
 				await this.openPickerForActiveEditor(normalizePosition(position));
 			})
 		);
-		for (const editor of vscode.window.visibleTextEditors) {
+		for (const editor of window.visibleTextEditors) {
 			this.scheduleRefresh(editor, 20);
 		}
 	}
 
 	public dispose(): void {
+		this.isDisposed = true;
 		for (const timeout of this.refreshByUri.values()) {
 			clearTimeout(timeout);
 		}
@@ -76,24 +96,27 @@ export class ItemStackDecorationController implements vscode.Disposable {
 		}
 	}
 
-	public async openPickerForActiveEditor(position?: vscode.Position): Promise<void> {
-		const editor = vscode.window.activeTextEditor;
+	public async openPickerForActiveEditor(position?: Position): Promise<void> {
+		const editor = window.activeTextEditor;
 		if (!editor || !isGuideNhPreviewDocument(editor.document)) {
-			await vscode.window.showInformationMessage(localize('Open a GuideNH document and place the cursor inside an ItemStack id first.'));
+			await window.showInformationMessage(localize('Open a GuideNH document and place the cursor inside an ItemStack id first.'));
 			return;
 		}
 		const targetPosition = position ?? editor.selection.active;
-		const stateContext = this.findEditorStateContext(editor, targetPosition)
-			?? this.contextCache.findNearestContext(editor, targetPosition)
+		const stateContext = this.contextCache.findNearestContext(editor, targetPosition)
 			?? this.contextCache.findContextAt(editor, targetPosition);
 		if (!stateContext) {
-			await vscode.window.showInformationMessage(localize('Move the cursor into an ItemStack id before opening the picker.'));
+			await window.showInformationMessage(localize('Move the cursor into an ItemStack id before opening the picker.'));
 			return;
 		}
 		await this.pickerPanel.show(stateContext, editor);
 	}
 
-	private scheduleRefresh(editor: vscode.TextEditor, delayMs: number): void {
+	private scheduleRefresh(editor: TextEditor, delayMs: number): void {
+		if (this.isDisposed) {
+			return;
+		}
+		this.refreshVersionByEditor.set(editor, (this.refreshVersionByEditor.get(editor) ?? 0) + 1);
 		if (!isGuideNhPreviewDocument(editor.document)) {
 			this.clearDecorations(editor);
 			return;
@@ -110,36 +133,39 @@ export class ItemStackDecorationController implements vscode.Disposable {
 		this.refreshByUri.set(uri, timeout);
 	}
 
-	private async refreshEditor(editor: vscode.TextEditor): Promise<void> {
+	private async refreshEditor(editor: TextEditor): Promise<void> {
+		const documentVersion = editor.document.version;
+		const refreshVersion = this.refreshVersionByEditor.get(editor);
 		const contexts = this.contextCache.getVisibleContexts(editor)
 			.slice(0, ItemStackDecorationController.maxVisibleContexts);
 		const states = await this.resolveDecorationStates(contexts);
-		this.editorState.set(editor, states);
+		if (this.isDisposed || editor.document.version !== documentVersion || this.refreshVersionByEditor.get(editor) !== refreshVersion) {
+			return;
+		}
 		this.applyDecorations(editor, states);
 	}
 
-	private applyDecorations(editor: vscode.TextEditor, states: ItemStackDecorationState[]): void {
-		editor.setDecorations(this.inlineDecorationType, states.map((state) => this.createDecorationOption(state)));
+	private applyDecorations(editor: TextEditor, states: ItemStackDecorationState[]): void {
+		editor.setDecorations(this.gutterDecorationType, states.map((state) => {
+			const position = state.context.valueRange.start;
+			return new Range(position, position);
+		}));
+		editor.setDecorations(this.hoverDecorationType, states.map((state) => this.createDecorationOption(editor.document, state)));
 	}
 
-	private clearDecorations(editor: vscode.TextEditor): void {
-		editor.setDecorations(this.inlineDecorationType, []);
-		this.editorState.set(editor, []);
+	private clearDecorations(editor: TextEditor): void {
+		editor.setDecorations(this.gutterDecorationType, []);
+		editor.setDecorations(this.hoverDecorationType, []);
 	}
 
-	private createDecorationOption(state: ItemStackDecorationState): vscode.DecorationOptions {
-		const iconUri = state.preview ? createSizedInlineIconUri(state.preview) : createFallbackInlineIconUri();
+	private createDecorationOption(document: TextDocument, state: ItemStackDecorationState): DecorationOptions {
+		const valueRange = state.context.valueRange;
 		return {
-			range: state.context.valueRange,
-			hoverMessage: this.createHoverMessage(state),
-			renderOptions: {
-				before: {
-					contentIconPath: iconUri,
-					margin: '0 0.28em -0.18em 0',
-					width: '1em',
-					height: '1em'
-				}
-			}
+			range: new Range(
+				document.positionAt(document.offsetAt(valueRange.start) - 1),
+				document.positionAt(document.offsetAt(valueRange.end) + 1)
+			),
+			hoverMessage: this.createHoverMessage(state)
 		};
 	}
 
@@ -149,6 +175,7 @@ export class ItemStackDecorationController implements vscode.Disposable {
 		message.supportHtml = true;
 		const pickerCommandUri = createPickerCommandUri(state.context.valueRange.end);
 		if (state.preview) {
+			message.appendMarkdown(`<img src="${createPreviewDataUri(state.preview)}" width="32" height="32" /><br/>`);
 			appendFormattedHoverLine(message, state.preview.displayName || state.preview.id);
 			if (state.preview.detail && state.preview.detail !== state.preview.id) {
 				appendFormattedHoverLine(message, state.preview.detail);
@@ -171,14 +198,6 @@ export class ItemStackDecorationController implements vscode.Disposable {
 		}
 		message.appendMarkdown(`\n[${escapeMarkdown(localize('Open ItemStack picker'))}](${pickerCommandUri})`);
 		return message;
-	}
-
-	private findEditorStateContext(editor: vscode.TextEditor, position: vscode.Position): ItemStackContext | undefined {
-		const states = this.editorState.get(editor) ?? [];
-		return states.find((state) => {
-			return state.context.valueRange.contains(position)
-				|| state.context.valueRange.end.isEqual(position);
-		})?.context;
 	}
 
 	private async resolveDecorationStates(contexts: ItemStackContext[]): Promise<ItemStackDecorationState[]> {
@@ -225,7 +244,7 @@ function appendFormattedHoverLine(message: MarkdownString, value: string): void 
 	message.appendMarkdown(`${renderMinecraftFormattingHtml(value)}<br/>`);
 }
 
-function createPickerCommandUri(position: vscode.Position): string {
+function createPickerCommandUri(position: Position): string {
 	const argument = encodeURIComponent(JSON.stringify([{
 		line: position.line,
 		character: position.character
@@ -233,7 +252,7 @@ function createPickerCommandUri(position: vscode.Position): string {
 	return `command:guide-vsc.openItemStackPicker?${argument}`;
 }
 
-function normalizePosition(value: unknown): vscode.Position | undefined {
+function normalizePosition(value: unknown): Position | undefined {
 	if (!value || typeof value !== 'object') {
 		return undefined;
 	}
@@ -241,5 +260,5 @@ function normalizePosition(value: unknown): vscode.Position | undefined {
 	if (typeof candidate.line !== 'number' || typeof candidate.character !== 'number') {
 		return undefined;
 	}
-	return new vscode.Position(candidate.line, candidate.character);
+	return new Position(candidate.line, candidate.character);
 }

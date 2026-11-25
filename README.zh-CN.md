@@ -53,7 +53,7 @@ npm run package
 npm run build
 ```
 
-`npm run verify` 会重新生成 schema、运行 lint、编译 TypeScript，并执行 VS Code 插件测试套件。`npm run package` 会生成 `dist/guide-vsc.vsix`。`npm run build` 会先验证再打包。
+`npm run verify` 会重新生成 schema、运行 lint、编译 TypeScript，并执行 VS Code 插件测试套件。`npm run package` 会生成 `dist/guide-vsc.vsix`。`npm run build` 会从 GuideNH 源码重新生成 schema、运行 lint，再打包生产插件，不运行单元测试。
 
 ## 安全说明
 

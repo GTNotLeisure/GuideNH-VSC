@@ -1,4 +1,17 @@
-import * as vscode from 'vscode';
+import {
+	DecorationRangeBehavior,
+	Disposable,
+	Range,
+	Selection,
+	TextEditor,
+	TextEditorDecorationType,
+	Uri,
+	ViewColumn,
+	Webview,
+	WebviewPanel,
+	window,
+	workspace
+} from 'vscode';
 import { PreviewResolvePayload, PreviewResolveResultPayload, PreviewSearchEntry } from '../../common/protocol';
 import { localize } from '../localization';
 import { createPreviewDataUri, escapeHtml } from './itemStackDecorationAssets';
@@ -6,14 +19,15 @@ import {
 	findBestMatchingItemStackContext,
 	findNearestItemStackContextInEditor,
 	isSameItemStackBinding,
-	ItemStackContext
-	, contentPreviewPayload
+	ItemStackContext,
+	contentPreviewPayload
 } from './itemStackContextResolver';
 import { GuideNhItemStackDropMime } from './itemStackDropPayload';
 import { ItemStackPreviewClient } from './itemStackPreviewClient';
 import { renderMinecraftFormattingHtml, serializeMinecraftTooltipLines, stripMinecraftFormatting } from './itemStackTextFormatting';
 
 interface PickerState {
+	sessionId: number;
 	documentUri: string;
 	query: string;
 	selectedId: string;
@@ -32,19 +46,19 @@ interface PickerPanelMessage {
 	id?: string;
 }
 
-export class ItemStackPickerPanel implements vscode.Disposable {
-	private panel: vscode.WebviewPanel | undefined;
+export class ItemStackPickerPanel implements Disposable {
+	private panel: WebviewPanel | undefined;
 	private currentState: PickerState | undefined;
-	private readonly disposables: vscode.Disposable[] = [];
-	private currentEditor: vscode.TextEditor | undefined;
+	private readonly disposables: Disposable[] = [];
 	private stateRequestVersion = 0;
-	private readonly dragHighlightDecorationType: vscode.TextEditorDecorationType;
+	private sessionVersion = 0;
+	private readonly dragHighlightDecorationType: TextEditorDecorationType;
 
 	public constructor(
 		private readonly previewClient: ItemStackPreviewClient
 	) {
-		this.dragHighlightDecorationType = vscode.window.createTextEditorDecorationType({
-			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+		this.dragHighlightDecorationType = window.createTextEditorDecorationType({
+			rangeBehavior: DecorationRangeBehavior.ClosedClosed,
 			backgroundColor: 'rgba(109, 168, 79, 0.18)',
 			borderRadius: '4px',
 			outline: '1px solid rgba(142, 217, 107, 0.85)'
@@ -54,28 +68,29 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 
 	public async show(
 		context: ItemStackContext,
-		editor: vscode.TextEditor
+		editor: TextEditor
 	): Promise<void> {
-		this.currentEditor = editor;
-		const loadingState = createLoadingState(editor.document.uri.toString(), context);
+		this.stateRequestVersion++;
+		const loadingState = createLoadingState(editor.document.uri.toString(), context, ++this.sessionVersion);
 		if (!this.panel) {
-			this.panel = vscode.window.createWebviewPanel(
+			this.panel = window.createWebviewPanel(
 				'guide-vsc.itemStackPicker',
 				localize('GuideNH ItemStack Picker'),
-				vscode.ViewColumn.Beside,
+				ViewColumn.Beside,
 				{
 					enableScripts: true,
 					retainContextWhenHidden: true
 				}
 			);
 			this.panel.onDidDispose(() => {
+				this.stateRequestVersion++;
 				this.clearDragHighlight();
 				this.panel = undefined;
 				this.currentState = undefined;
 			}, undefined, this.disposables);
 			this.panel.webview.onDidReceiveMessage((message: PickerPanelMessage) => {
 				void this.handleMessage(message).catch(async (error) => {
-					await vscode.window.showErrorMessage(
+					await window.showErrorMessage(
 						error instanceof Error
 							? error.message
 							: localize('GuideNH ItemStack picker apply failed.')
@@ -86,19 +101,20 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 			this.panel.webview.html = this.renderHtml(this.panel.webview, loadingState);
 		}
 		this.currentState = loadingState;
-		if (this.panel) {
-			await this.postState();
-		}
-		this.panel.reveal(vscode.ViewColumn.Beside, true);
-		void this.loadState(context, editor);
+		this.panel.reveal(ViewColumn.Beside, true);
+		void this.updateSearch(loadingState.query);
+		await this.postState();
 	}
 
 	public dispose(): void {
+		this.stateRequestVersion++;
+		this.currentState = undefined;
 		this.clearDragHighlight();
+		this.panel?.dispose();
+		this.panel = undefined;
 		while (this.disposables.length > 0) {
 			this.disposables.pop()?.dispose();
 		}
-		this.panel?.dispose();
 	}
 
 	private async handleMessage(message: PickerPanelMessage): Promise<void> {
@@ -133,61 +149,16 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		}
 	}
 
-	private async loadState(context: ItemStackContext, editor: vscode.TextEditor): Promise<void> {
-		const requestVersion = ++this.stateRequestVersion;
-		const documentUri = editor.document.uri.toString();
-		const initialQuery = context.value.trim();
-		try {
-			const searchResult = await this.previewClient.search({
-				capability: context.capability ?? 'items',
-				cursor: '',
-				limit: 40,
-				prefix: initialQuery,
-				filters: {
-					source: 'picker'
-				}
-			});
-			const selectedId = pickInitialSelection(context.value, searchResult.entries);
-			const selectedPreview = selectedId
-				? await this.resolvePreview(selectedId)
-				: undefined;
-			const entryPreviewDataUris = await this.resolveEntryPreviewDataUris(searchResult.entries);
-			if (!this.currentState || this.currentState.documentUri !== documentUri || requestVersion !== this.stateRequestVersion) {
-				return;
-			}
-			this.currentState = {
-				documentUri,
-				query: initialQuery,
-				selectedId,
-				selectedPreview,
-				entries: searchResult.entries,
-				context,
-				entryPreviewDataUris,
-				isLoading: false,
-				errorMessage: undefined
-			};
-		} catch (error) {
-			if (!this.currentState || this.currentState.documentUri !== documentUri || requestVersion !== this.stateRequestVersion) {
-				return;
-			}
-			this.currentState = {
-				...createLoadingState(documentUri, context),
-				isLoading: false,
-				errorMessage: error instanceof Error
-					? error.message
-					: localize('GuideNH ItemStack picker could not load runtime items.')
-			};
-		}
-		await this.postState();
-	}
-
 	private async updateSearch(query: string): Promise<void> {
-		if (!this.currentState) {
+		const state = this.currentState;
+		if (!state) {
 			return;
 		}
+		const requestVersion = ++this.stateRequestVersion;
+		this.currentState = { ...state, query };
 		try {
 			const searchResult = await this.previewClient.search({
-				capability: this.currentState.context.capability ?? 'items',
+				capability: state.context.capability ?? 'items',
 				cursor: '',
 				limit: 40,
 				prefix: query,
@@ -195,13 +166,19 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 					source: 'picker'
 				}
 			});
-			const selectedId = pickInitialSelection(this.currentState.selectedId || query, searchResult.entries);
+			if (!this.isCurrentRequest(state, requestVersion)) {
+				return;
+			}
+			const selectedId = pickInitialSelection(state.selectedId || query, searchResult.entries);
 			const selectedPreview = selectedId
-				? await this.resolvePreview(selectedId)
+				? await this.resolvePreview(selectedId, state.context)
 				: undefined;
-			const entryPreviewDataUris = await this.resolveEntryPreviewDataUris(searchResult.entries);
+			const entryPreviewDataUris = await this.resolveEntryPreviewDataUris(searchResult.entries, state.context);
+			if (!this.isCurrentRequest(state, requestVersion)) {
+				return;
+			}
 			this.currentState = {
-				...this.currentState,
+				...state,
 				query,
 				selectedId,
 				selectedPreview,
@@ -211,8 +188,11 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 				errorMessage: undefined
 			};
 		} catch (error) {
+			if (!this.isCurrentRequest(state, requestVersion)) {
+				return;
+			}
 			this.currentState = {
-				...this.currentState,
+				...state,
 				query,
 				isLoading: false,
 				errorMessage: error instanceof Error
@@ -224,21 +204,32 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 	}
 
 	private async updateSelectedPreview(id: string): Promise<void> {
-		if (!this.currentState) {
+		const state = this.currentState;
+		if (!state) {
 			return;
 		}
+		const requestVersion = ++this.stateRequestVersion;
 		try {
+			const selectedPreview = await this.resolvePreview(id, state.context);
+			if (!this.isCurrentRequest(state, requestVersion)) {
+				return;
+			}
 			this.currentState = {
-				...this.currentState,
+				...state,
 				selectedId: id,
-				selectedPreview: await this.resolvePreview(id),
+				selectedPreview,
+				isLoading: false,
 				errorMessage: undefined
 			};
 		} catch (error) {
+			if (!this.isCurrentRequest(state, requestVersion)) {
+				return;
+			}
 			this.currentState = {
-				...this.currentState,
+				...state,
 				selectedId: id,
 				selectedPreview: undefined,
+				isLoading: false,
 				errorMessage: error instanceof Error
 					? error.message
 					: localize('GuideNH ItemStack picker could not load runtime items.')
@@ -248,19 +239,24 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 	}
 
 	private async applySelection(id: string): Promise<void> {
-		if (!this.currentState) {
+		const state = this.currentState;
+		if (!state) {
 			return;
 		}
+		const requestVersion = ++this.stateRequestVersion;
 		const editor = await this.resolveTargetEditor();
-		if (!editor) {
-			await vscode.window.showErrorMessage(localize('Reopen the GuideNH document before applying an ItemStack id.'));
+		if (!this.isCurrentRequest(state, requestVersion)) {
 			return;
 		}
-		let targetRange: vscode.Range;
+		if (!editor) {
+			await window.showErrorMessage(localize('Reopen the GuideNH document before applying an ItemStack id.'));
+			return;
+		}
+		let targetRange: Range;
 		try {
 			targetRange = this.resolveApplyRange(editor);
 		} catch (error) {
-			await vscode.window.showErrorMessage(
+			await window.showErrorMessage(
 				error instanceof Error
 					? error.message
 					: localize('The original ItemStack target is no longer valid. Reopen the picker from the intended attribute and try again.')
@@ -271,29 +267,31 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 			editBuilder.replace(targetRange, id);
 		});
 		if (!didApply) {
-			await vscode.window.showErrorMessage(localize('GuideNH ItemStack picker could not apply the selected id.'));
+			await window.showErrorMessage(localize('GuideNH ItemStack picker could not apply the selected id.'));
+			return;
+		}
+		if (!this.isCurrentRequest(state, requestVersion)) {
 			return;
 		}
 		const end = targetRange.start.translate(0, id.length);
-		editor.selection = new vscode.Selection(end, end);
-		editor.revealRange(new vscode.Range(targetRange.start, end));
-		this.currentEditor = editor;
+		editor.selection = new Selection(end, end);
+		editor.revealRange(new Range(targetRange.start, end));
 		this.currentState = {
-			...this.currentState,
+			...state,
 			context: {
-				...this.currentState.context,
+				...state.context,
 				value: id,
-				valueRange: new vscode.Range(targetRange.start, end)
+				valueRange: new Range(targetRange.start, end)
 			},
 			selectedId: id,
-			selectedPreview: await this.resolvePreview(id),
+			selectedPreview: undefined,
 			errorMessage: undefined
 		};
-		await this.postState();
+		await this.updateSelectedPreview(id);
 	}
 
 	private async refreshCurrentState(): Promise<void> {
-		if (!this.currentState || !this.currentEditor) {
+		if (!this.currentState) {
 			return;
 		}
 		this.currentState = {
@@ -301,8 +299,9 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 			isLoading: true,
 			errorMessage: undefined
 		};
+		const request = this.updateSearch(this.currentState.query);
 		await this.postState();
-		await this.loadState(this.currentState.context, this.currentEditor);
+		await request;
 	}
 
 	private async updateDragHighlight(active: boolean): Promise<void> {
@@ -322,9 +321,9 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		}]);
 	}
 
-	private resolveApplyRange(editor: vscode.TextEditor): vscode.Range {
+	private resolveApplyRange(editor: TextEditor): Range {
 		if (!this.currentState) {
-			return new vscode.Range(editor.selection.active, editor.selection.active);
+			return new Range(editor.selection.active, editor.selection.active);
 		}
 		const currentContext = findBestMatchingItemStackContext(editor.document, this.currentState.context);
 		if (currentContext) {
@@ -337,7 +336,7 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		throw new Error(localize('The original ItemStack target is no longer valid. Reopen the picker from the intended attribute and try again.'));
 	}
 
-	private async resolveTargetEditor(): Promise<vscode.TextEditor | undefined> {
+	private async resolveTargetEditor(): Promise<TextEditor | undefined> {
 		if (!this.currentState) {
 			return undefined;
 		}
@@ -345,39 +344,41 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		if (visibleEditor) {
 			return visibleEditor;
 		}
-		const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(this.currentState.documentUri));
-		return vscode.window.showTextDocument(document, {
+		const document = await workspace.openTextDocument(Uri.parse(this.currentState.documentUri));
+		return window.showTextDocument(document, {
 			preview: false,
 			preserveFocus: false
 		});
 	}
 
-	private findVisibleTargetEditor(): vscode.TextEditor | undefined {
+	private findVisibleTargetEditor(): TextEditor | undefined {
 		if (!this.currentState) {
 			return undefined;
 		}
-		return vscode.window.visibleTextEditors.find((editor) => {
+		return window.visibleTextEditors.find((editor) => {
 			return editor.document.uri.toString() === this.currentState?.documentUri;
 		});
 	}
 
 	private clearDragHighlight(): void {
-		for (const editor of vscode.window.visibleTextEditors) {
+		for (const editor of window.visibleTextEditors) {
 			editor.setDecorations(this.dragHighlightDecorationType, []);
 		}
 	}
 
-	private async resolvePreview(id: string): Promise<PreviewResolveResultPayload> {
-		const context = this.currentState?.context;
-		const payload: PreviewResolvePayload = context ? contentPreviewPayload({ ...context, value: id }, 1, 'picker', 'picker')
-			: { capability: 'items', id, count: 1, renderVariant: 'picker', filters: { source: 'picker' } };
+	private isCurrentRequest(state: PickerState, requestVersion: number): boolean {
+		return this.currentState?.sessionId === state.sessionId && this.stateRequestVersion === requestVersion;
+	}
+
+	private async resolvePreview(id: string, context: ItemStackContext): Promise<PreviewResolveResultPayload> {
+		const payload: PreviewResolvePayload = contentPreviewPayload({ ...context, value: id }, 1, 'picker', 'picker');
 		return this.previewClient.resolve(payload);
 	}
 
-	private async resolveEntryPreviewDataUris(entries: PreviewSearchEntry[]): Promise<Record<string, string>> {
+	private async resolveEntryPreviewDataUris(entries: PreviewSearchEntry[], context: ItemStackContext): Promise<Record<string, string>> {
 		const resolvedEntries = await Promise.all(entries.slice(0, 12).map(async (entry) => {
 			try {
-				const preview = await this.resolvePreview(entry.id);
+				const preview = await this.resolvePreview(entry.id, context);
 				return [entry.id, createPreviewDataUri(preview)] as const;
 			} catch {
 				return [entry.id, ''] as const;
@@ -396,7 +397,7 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		});
 	}
 
-	private renderHtml(_webview: vscode.Webview, state: PickerState): string {
+	private renderHtml(_webview: Webview, state: PickerState): string {
 		const nonce = String(Date.now());
 		const initialState = escapeJsonForHtmlScriptTag(JSON.stringify(serializeState(state)));
 		return `<!DOCTYPE html>
@@ -642,6 +643,7 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		const list = document.getElementById('list');
 		const preview = document.getElementById('preview');
 		let currentState = initialState;
+		let currentSessionId;
 		let debounceTimer;
 		let isComposing = false;
 
@@ -659,10 +661,15 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 		}
 
 		function render(state) {
-			currentState = state;
-			if (!isComposing && searchInput.value !== state.query) {
+			if (currentSessionId !== state.sessionId) {
+				clearTimeout(debounceTimer);
+				isComposing = false;
+				currentSessionId = state.sessionId;
 				searchInput.value = state.query;
+			} else if (isComposing || searchInput.value !== state.query) {
+				return;
 			}
+			currentState = state;
 			list.innerHTML = state.isLoading && state.entries.length === 0
 				? '<div class="empty">${escapeHtml(localize('Loading runtime items...'))}</div>'
 				: state.entries.length === 0
@@ -737,32 +744,41 @@ export class ItemStackPickerPanel implements vscode.Disposable {
 
 		function dispatchSearch(immediate) {
 			clearTimeout(debounceTimer);
+			if (isComposing) {
+				return;
+			}
 			if (immediate) {
 				vscode.postMessage({ type: 'search', query: searchInput.value });
 				return;
 			}
 			debounceTimer = setTimeout(() => {
-				vscode.postMessage({ type: 'search', query: searchInput.value });
+				if (!isComposing) {
+					vscode.postMessage({ type: 'search', query: searchInput.value });
+				}
 			}, 140);
 		}
 
 		searchInput.addEventListener('compositionstart', () => {
+			clearTimeout(debounceTimer);
 			isComposing = true;
 		});
 
 		searchInput.addEventListener('compositionend', () => {
 			isComposing = false;
-			dispatchSearch(true);
+			dispatchSearch(false);
 		});
 
-		searchInput.addEventListener('input', () => {
-			if (isComposing) {
+		searchInput.addEventListener('input', (event) => {
+			if (isComposing || event.isComposing) {
 				return;
 			}
 			dispatchSearch(false);
 		});
 
 		searchInput.addEventListener('keydown', (event) => {
+			if (isComposing || event.isComposing || event.keyCode === 229) {
+				return;
+			}
 			if (event.key === 'Enter') {
 				event.preventDefault();
 				dispatchSearch(true);
@@ -849,6 +865,7 @@ function serializeState(state: PickerState) {
 		? serializeMinecraftTooltipLines(state.selectedPreview.tooltipLines)
 		: [];
 	return {
+		sessionId: state.sessionId,
 		query: state.query,
 		selectedId: state.selectedId,
 		capability: state.context.capability ?? 'items',
@@ -872,8 +889,9 @@ function serializeState(state: PickerState) {
 	};
 }
 
-function createLoadingState(documentUri: string, context: ItemStackContext): PickerState {
+function createLoadingState(documentUri: string, context: ItemStackContext, sessionId: number): PickerState {
 	return {
+		sessionId,
 		documentUri,
 		query: context.value.trim(),
 		selectedId: context.value.trim(),

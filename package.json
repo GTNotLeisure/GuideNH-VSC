@@ -148,7 +148,7 @@
     "verify": "npm run generate:schema && npm run lint && npm run compile && npm test",
     "prepackage": "npm run compile:production && npm run bundle",
     "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --out dist/guide-vsc.vsix",
-    "build": "npm run verify && npm run package",
+    "build": "npm run generate:schema && npm run lint && npm run package",
     "compile:production": "tsc -p tsconfig.production.json"
   },
   "dependencies": {

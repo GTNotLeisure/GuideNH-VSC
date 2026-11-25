@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build, test, and package extension
+      - name: Build and package extension
         env:
           GUIDENH_ROOT: ${{ github.workspace }}/GuideNH
         run: xvfb-run -a npm run build

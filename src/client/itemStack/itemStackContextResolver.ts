@@ -1,12 +1,12 @@
-import * as vscode from 'vscode';
+import { Position, Range, TextDocument, TextEditor } from 'vscode';
 import { PreviewResolvePayload } from '../../common/protocol';
 
 export interface ItemStackContext {
 	tagName: string;
 	attributeName: string;
 	value: string;
-	valueRange: vscode.Range;
-	tagRange: vscode.Range;
+	valueRange: Range;
+	tagRange: Range;
 	line: number;
 	capability?: 'items' | 'fluids';
 	amount?: number;
@@ -47,15 +47,15 @@ export function contentPreviewPayload(context: ItemStackContext, count: number, 
 }
 
 const TagPattern = /<([A-Za-z][A-Za-z0-9]*)\b[^<>]*?>/g;
-const AttributePattern = /([A-Za-z_][\w.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+const AttributePattern = /([A-Za-z_][\w.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/dg;
 
-export function isGuideNhPreviewDocument(document: vscode.TextDocument): boolean {
+export function isGuideNhPreviewDocument(document: TextDocument): boolean {
 	return document.languageId === 'markdown' || document.languageId === 'guidenh-md';
 }
 
 export function findVisibleItemStackContexts(
-	document: vscode.TextDocument,
-	ranges: readonly vscode.Range[]
+	document: TextDocument,
+	ranges: readonly Range[]
 ): ItemStackContext[] {
 	const contexts: ItemStackContext[] = [];
 	const seen = new Set<string>();
@@ -66,8 +66,8 @@ export function findVisibleItemStackContexts(
 }
 
 export function findItemStackContextAtPosition(
-	document: vscode.TextDocument,
-	position: vscode.Position
+	document: TextDocument,
+	position: Position
 ): ItemStackContext | undefined {
 	const lineRange = expandRangeToNearbyLines(document, position.line, 8);
 	const contexts = findVisibleItemStackContexts(document, [lineRange]);
@@ -75,8 +75,8 @@ export function findItemStackContextAtPosition(
 }
 
 export function findNearestItemStackContextAtPosition(
-	document: vscode.TextDocument,
-	position: vscode.Position
+	document: TextDocument,
+	position: Position
 ): ItemStackContext | undefined {
 	const lineRange = expandRangeToNearbyLines(document, position.line, 8);
 	const contexts = findVisibleItemStackContexts(document, [lineRange]);
@@ -85,8 +85,8 @@ export function findNearestItemStackContextAtPosition(
 }
 
 export function findNearestItemStackContextInEditor(
-	editor: vscode.TextEditor,
-	position?: vscode.Position
+	editor: TextEditor,
+	position?: Position
 ): ItemStackContext | undefined {
 	const targetPosition = position ?? editor.selection.active;
 	return findNearestItemStackContextAtPosition(editor.document, targetPosition)
@@ -94,7 +94,7 @@ export function findNearestItemStackContextInEditor(
 }
 
 export function findBestMatchingItemStackContext(
-	document: vscode.TextDocument,
+	document: TextDocument,
 	target: ItemStackContext
 ): ItemStackContext | undefined {
 	const range = expandRangeToNearbyLines(document, target.line, 8);
@@ -122,8 +122,8 @@ export function isSameItemStackBinding(left: ItemStackContext, right: ItemStackC
 }
 
 function scanDocumentRange(
-	document: vscode.TextDocument,
-	range: vscode.Range,
+	document: TextDocument,
+	range: Range,
 	seen: Set<string>,
 	contexts: ItemStackContext[]
 ): void {
@@ -144,7 +144,8 @@ function scanDocumentRange(
 		const tagOffset = baseOffset + tagMatch.index;
 		const tagStart = document.positionAt(tagOffset);
 		const tagEnd = document.positionAt(tagOffset + tagMarkup.length);
-		const attributeSource = tagMarkup.slice(tagMarkup.indexOf(tagName) + tagName.length);
+		const attributeSourceOffset = 1 + tagName.length;
+		const attributeSource = tagMarkup.slice(attributeSourceOffset);
 		AttributePattern.lastIndex = 0;
 		let attributeMatch: RegExpExecArray | null;
 		while ((attributeMatch = AttributePattern.exec(attributeSource)) !== null) {
@@ -153,9 +154,12 @@ function scanDocumentRange(
 				continue;
 			}
 			const value = attributeMatch[2] ?? attributeMatch[3] ?? '';
-			const valueIndex = attributeMatch[0].indexOf(value);
-			const valueOffset = tagOffset + tagMarkup.indexOf(attributeSource) + attributeMatch.index + valueIndex;
-			const valueRange = new vscode.Range(
+			const valueIndices = attributeMatch.indices?.[2] ?? attributeMatch.indices?.[3];
+			if (!valueIndices) {
+				continue;
+			}
+			const valueOffset = tagOffset + attributeSourceOffset + valueIndices[0];
+			const valueRange = new Range(
 				document.positionAt(valueOffset),
 				document.positionAt(valueOffset + value.length)
 			);
@@ -164,7 +168,7 @@ function scanDocumentRange(
 				attributeName,
 				value,
 				valueRange,
-				tagRange: new vscode.Range(tagStart, tagEnd),
+				tagRange: new Range(tagStart, tagEnd),
 				line: valueRange.start.line,
 				capability: tagName.toLowerCase().startsWith('fluid') || /fluid/i.test(attributeName) ? 'fluids' : 'items',
 				amount: readAmount(tagMarkup),
@@ -187,7 +191,7 @@ function readAmount(markup: string): number | undefined {
 	return Number.isSafeInteger(amount) && amount <= 2147483647 ? amount : undefined;
 }
 
-function mergeRanges(ranges: readonly vscode.Range[]): vscode.Range[] {
+function mergeRanges(ranges: readonly Range[]): Range[] {
 	if (ranges.length === 0) {
 		return [];
 	}
@@ -197,27 +201,27 @@ function mergeRanges(ranges: readonly vscode.Range[]): vscode.Range[] {
 		}
 		return left.start.character - right.start.character;
 	});
-	const merged: vscode.Range[] = [];
+	const merged: Range[] = [];
 	for (const range of sorted) {
 		const previous = merged[merged.length - 1];
 		if (!previous || previous.end.isBefore(range.start)) {
 			merged.push(range);
 			continue;
 		}
-		merged[merged.length - 1] = new vscode.Range(previous.start, previous.end.isAfter(range.end) ? previous.end : range.end);
+		merged[merged.length - 1] = new Range(previous.start, previous.end.isAfter(range.end) ? previous.end : range.end);
 	}
 	return merged;
 }
 
 function expandRangeToNearbyLines(
-	document: vscode.TextDocument,
+	document: TextDocument,
 	line: number,
 	linePadding: number
-): vscode.Range {
+): Range {
 	const startLine = Math.max(0, line - linePadding);
 	const endLine = Math.min(document.lineCount - 1, line + linePadding);
-	return new vscode.Range(
-		new vscode.Position(startLine, 0),
+	return new Range(
+		new Position(startLine, 0),
 		document.lineAt(endLine).range.end
 	);
 }
@@ -233,8 +237,8 @@ function createContextKey(context: ItemStackContext): string {
 }
 
 function safeReadRangeText(
-	document: vscode.TextDocument,
-	range: vscode.Range
+	document: TextDocument,
+	range: Range
 ): string | undefined {
 	try {
 		return document.getText(range);

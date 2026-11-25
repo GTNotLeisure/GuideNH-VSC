@@ -54,7 +54,7 @@ npm run package
 npm run build
 ```
 
-`npm run verify` regenerates schema data, runs lint, compiles TypeScript, and executes the VS Code extension test suite. `npm run package` creates `dist/guide-vsc.vsix`. `npm run build` runs verification before packaging.
+`npm run verify` regenerates schema data, runs lint, compiles TypeScript, and executes the VS Code extension test suite. `npm run package` creates `dist/guide-vsc.vsix`. `npm run build` regenerates schema data from GuideNH sources, runs lint, and packages the production extension without running unit tests.
 
 ## Security Notes
 
